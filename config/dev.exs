@@ -2,8 +2,8 @@ import Config
 
 # Configure your database
 config :accountkit, Accountkit.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "root",
+  password: "admin",
   hostname: "localhost",
   database: "accountkit_dev",
   stacktrace: true,
