@@ -10,11 +10,20 @@ defmodule AccountkitWeb.Components.UIComponents do
 
 
   import AccountkitWeb.Components.Avatar, only: [avatar: 1]
-  import AccountkitWeb.Components.Dropdown, only: [dropdown: 1, dropdown_trigger: 1, dropdown_content: 1]
+  import AccountkitWeb.Components.Dropdown, only: [dropdown: 1, dropdown_content: 1]
   import AccountkitWeb.Components.Icon, only: [icon: 1]
   import AccountkitWeb.Components.Button, only: [button: 1]
-  import AccountkitWeb.Components.List, only: [list: 1, li: 1, ul: 1, ol: 1, list_group: 1]
+  import AccountkitWeb.Components.List, only: [list: 1]
 
+  attr :class, :any, default: nil
+
+  def logo(assigns) do
+    ~H"""
+    <.link navigate={~p"/"} class={["text-xl font-semibold tracking-tight", @class]}>
+      AccountKit
+    </.link>
+    """
+  end
 
   def theme_toggle(assigns) do
     ~H"""
@@ -78,10 +87,6 @@ defmodule AccountkitWeb.Components.UIComponents do
         </.list>∏
         </.dropdown_content>
     </.dropdown>
-
-    <.link :if={!@current_scope || !@current_scope.user} navigate={~p"/auth/login"} class="btn btn-primary">
-      Login
-    </.link>
 
     """
   end
