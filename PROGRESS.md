@@ -2,42 +2,36 @@
 
 ## Current Status
 
-AccountKit is freshly installed as a Phoenix/Ash application.
-
-The project direction has been clarified:
-
-- Build AccountKit in Elixir/Phoenix/Ash, not TypeScript.
-- Use the old `_kit` TypeScript work only as historical context.
-- Build a real SSO/account infrastructure app for the owner's other applications.
-- Use the project as a path to become strong in the Elixir stack.
-- Assistants should teach and guide first, and only write code when explicitly asked.
+Basic UI shell is working. The app boots, renders a homepage with a layout, header with user menu and theme toggle, and the Scalar API docs page. The next focus is building the dashboard LiveView and then moving into SSO.
 
 ## Completed
 
-- Created `GOAL.md` describing the AccountKit product vision and target stack.
-- Created `GUIDANCE-GOAL.md` describing the teaching style, collaboration rules, TypeScript-to-Elixir explanations, and initial SSO direction.
-- Confirmed the app includes Phoenix, LiveView, Ash, AshPostgres, AshAuthentication, AshAuthenticationPhoenix, AshAdmin, AshJsonApi, AshArchival, AshPaperTrail, Cinder, Swoosh, Req, Bandit, Tailwind, and related tooling.
-- Removed/deferred money/accounting dependencies that blocked setup, because SSO does not need them yet.
+- Created `GOAL.md`, `GUIDANCE-GOAL.md`, and `PROGRESS.md` to track direction and learning goals.
+- Fixed dependency conflict by deferring `ash_money` and `ash_double_entry`.
 - Ran `mix setup` successfully.
+- Re-ran Ash igniter installer — generated `Accounts` domain, `User`, `Token`, `ApiKey` resources, auth routes, and `AshJsonApiRouter`.
+- Added `scalar_plug ~> 0.2.0` and mounted Scalar API docs at `/api/json/docs`.
+- Learned Phoenix layout system: `root.html.heex`, `layouts.ex`, `core_components.ex`, how assigns flow.
+- Learned HEEx concepts: sigils (`~H`, `~p`), named slots (`<:slot_name>`), attrs as props, arity rules.
+- Learned why `core_components.ex` cannot use `use AccountkitWeb, :html` (circular dependency).
+- Learned Phoenix module system: no auto-imports, explicit imports, arity always 1 for components.
+- Created `lib/accountkit_web/components/ui_components.ex` for app-specific components (user_menu, theme_toggle).
+- Created `lib/accountkit_web/components/sections/headers.ex` for page section components.
+- Homepage renders with working layout, header, user menu (shows login button when not authenticated), and theme toggle.
+- Confirmed `ash_admin` works at `/admin`.
 
 ## Current Learning Focus
 
-Start with understanding the fresh app before building SSO features.
-
-The first goal is not to add features yet. The first goal is to understand the project skeleton well enough that future changes feel intentional.
+Building the dashboard LiveView and understanding how LiveViews differ from controller-rendered templates.
 
 ## Next Steps
 
-1. Run the app locally and make sure the Phoenix server boots.
-2. Learn the top-level Phoenix project structure.
-3. Learn the runtime supervision tree in `lib/accountkit/application.ex`.
-4. Learn Mix basics through `mix.exs`, especially dependencies and aliases.
-5. Learn Phoenix request flow: endpoint, router, controller/live route, template/component.
-6. Learn where Ash is installed and what files/config it generated.
-7. Identify the existing authentication resources, routes, and generated Ash Authentication pieces.
-8. Inspect the production company SSO app as reference material.
-9. Decide the first AccountKit SSO flow.
-10. Build the first tiny vertical slice by hand.
+1. Build `DashboardLive` at `/dashboard` — first real LiveView written by hand.
+2. Add `on_mount` auth guard so only logged-in users can access dashboard.
+3. Build dashboard layout with sidebar (Settings, Profile, Projects).
+4. Convert homepage from controller-rendered to LiveView.
+5. Inspect the production company SSO app as reference for the first SSO flow.
+6. Design and build the first SSO vertical slice.
 
 ## First Vertical Slice Target
 
@@ -76,11 +70,16 @@ Do not add billing, tenants, API keys, admin dashboards, or audit logs until the
 ### 2026-05-21
 
 - Confirmed the project is freshly installed.
-- Created this progress tracker.
-- Fixed initial dependency resolution by deferring `ash_money` and `ash_double_entry` (not needed for SSO).
+- Created progress tracker, guidance goal, and goal files.
+- Fixed `ash_money`/`ash_double_entry` dependency conflict.
 - Ran `mix setup` successfully.
-- Re-ran the Ash igniter installer, which generated Ash auth resources, routes, and the AshJsonApi router.
-- Added `scalar_plug ~> 0.2.0` and mounted Scalar API docs at `/api/json/docs`.
-- Scalar UI is now rendering in the browser.
-- Next: understand the generated Ash auth files, then start building the first SSO resource.
+- Re-ran Ash igniter — generated auth resources, routes, AshJsonApiRouter.
+- Added and wired `scalar_plug` for Scalar API docs at `/api/json/docs`.
+- Learned Phoenix layout system, HEEx syntax, sigils, slots, attrs, arity.
+- Learned module import rules, circular dependency constraints, `~p` verified routes.
+- Built `ui_components.ex` (user_menu, theme_toggle) and `sections/headers.ex`.
+- Fixed nil crash on `current_scope` access when user is not logged in.
+- Homepage and header now render correctly in the browser.
+- Ash admin confirmed working at `/admin`.
+- Next session: build `DashboardLive` and first real LiveView.
 

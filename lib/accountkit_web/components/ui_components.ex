@@ -48,9 +48,12 @@ defmodule AccountkitWeb.Components.UIComponents do
     """
   end
 
+  attr :id, :string, default: "user-menu"
+  attr :current_scope, :any, default: nil
+
   def user_menu(assigns) do
     ~H"""
-    <.dropdown id="user-menu" :if={@current_scope && @current_scope.user} relative="relative" position="right">
+    <.dropdown id={@id} :if={@current_scope && @current_scope.user} relative="relative" position="right">
       <:trigger>
         <.button color="primary" icon="hero-chevron-down" right_icon>
           <.avatar
