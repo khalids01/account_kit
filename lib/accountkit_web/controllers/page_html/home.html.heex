@@ -1,5 +1,69 @@
 <Layouts.home flash={@flash} current_scope={@current_scope}>
-  <section>
-    <h1>Home</h1>
+  <section class="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col items-center justify-center px-6 py-24 text-center">
+    <p class="mb-4 rounded-full border border-base-300 px-4 py-2 text-sm font-medium text-base-content/70">
+      Open-source account infrastructure for SaaS apps
+    </p>
+
+    <h1 class="max-w-4xl text-4xl font-bold tracking-tight sm:text-6xl">
+      Auth, users, tenants, API keys, and billing in one self-hostable control center.
+    </h1>
+
+    <p class="mt-6 max-w-2xl text-lg leading-8 text-base-content/70">
+      AccountKit helps Phoenix and Ash builders ship the account layer every serious SaaS needs,
+      without stitching together auth starters, billing glue, admin screens, and audit tooling from scratch.
+    </p>
+
+    <div class="mt-10 flex flex-col gap-3 sm:flex-row">
+      <.link href="#features" class="btn btn-primary">
+        Explore features
+      </.link>
+      <.link href="https://github.com" class="btn btn-outline">
+        View source
+      </.link>
+    </div>
   </section>
+
+  <section id="features" class="bg-base-200/60 px-6 py-20">
+    <div class="mx-auto max-w-6xl">
+      <div class="max-w-2xl">
+        <p class="text-sm font-semibold uppercase tracking-wide text-primary">Features</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+          The boring account work, packaged for real SaaS products.
+        </h2>
+        <p class="mt-4 text-base-content/70">
+          Start with the foundations, then grow into multi-tenant account operations without changing stacks.
+        </p>
+      </div>
+
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        <article class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+          <h3 class="text-lg font-semibold">Authentication</h3>
+          <p class="mt-3 text-sm leading-6 text-base-content/70">
+            Password, magic link, and API key flows designed to live inside a Phoenix/Ash application.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+          <h3 class="text-lg font-semibold">Tenants and users</h3>
+          <p class="mt-3 text-sm leading-6 text-base-content/70">
+            Manage people, organizations, memberships, and account-level settings from one place.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+          <h3 class="text-lg font-semibold">Billing ready</h3>
+          <p class="mt-3 text-sm leading-6 text-base-content/70">
+            Build toward plans, subscriptions, invoices, audit logs, and operational visibility as the product matures.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <footer class="border-t border-base-300 px-6 py-8">
+    <div class="mx-auto flex max-w-6xl flex-col gap-3 text-sm text-base-content/60 sm:flex-row sm:items-center sm:justify-between">
+      <p>AccountKit</p>
+      <p>Open-source account infrastructure for SaaS builders.</p>
+    </div>
+  </footer>
 </Layouts.home>
