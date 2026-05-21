@@ -77,7 +77,10 @@ Do not add billing, tenants, API keys, admin dashboards, or audit logs until the
 
 - Confirmed the project is freshly installed.
 - Created this progress tracker.
-- Fixed initial dependency resolution by deferring money/accounting packages.
+- Fixed initial dependency resolution by deferring `ash_money` and `ash_double_entry` (not needed for SSO).
 - Ran `mix setup` successfully.
-- Next recommended action: boot the Phoenix server, then inspect `mix.exs`, `lib/accountkit/application.ex`, and the router together.
+- Re-ran the Ash igniter installer, which generated Ash auth resources, routes, and the AshJsonApi router.
+- Added `scalar_plug ~> 0.2.0` and mounted Scalar API docs at `/api/json/docs`.
+- Scalar UI is now rendering in the browser.
+- Next: understand the generated Ash auth files, then start building the first SSO resource.
 
