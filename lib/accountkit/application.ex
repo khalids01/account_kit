@@ -15,7 +15,8 @@ defmodule Accountkit.Application do
       # Start a worker by calling: Accountkit.Worker.start_link(arg)
       # {Accountkit.Worker, arg},
       # Start to serve requests, typically the last entry
-      AccountkitWeb.Endpoint
+      AccountkitWeb.Endpoint,
+      {AshAuthentication.Supervisor, [otp_app: :accountkit]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

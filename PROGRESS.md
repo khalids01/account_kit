@@ -16,7 +16,9 @@ The project direction has been clarified:
 
 - Created `GOAL.md` describing the AccountKit product vision and target stack.
 - Created `GUIDANCE-GOAL.md` describing the teaching style, collaboration rules, TypeScript-to-Elixir explanations, and initial SSO direction.
-- Confirmed the app includes Phoenix, LiveView, Ash, AshPostgres, AshAuthentication, AshAuthenticationPhoenix, AshAdmin, AshJsonApi, AshMoney, AshDoubleEntry, AshArchival, AshPaperTrail, Cinder, Swoosh, Req, Bandit, Tailwind, and related tooling.
+- Confirmed the app includes Phoenix, LiveView, Ash, AshPostgres, AshAuthentication, AshAuthenticationPhoenix, AshAdmin, AshJsonApi, AshArchival, AshPaperTrail, Cinder, Swoosh, Req, Bandit, Tailwind, and related tooling.
+- Removed/deferred money/accounting dependencies that blocked setup, because SSO does not need them yet.
+- Ran `mix setup` successfully.
 
 ## Current Learning Focus
 
@@ -75,5 +77,7 @@ Do not add billing, tenants, API keys, admin dashboards, or audit logs until the
 
 - Confirmed the project is freshly installed.
 - Created this progress tracker.
-- Next recommended action: run the Phoenix app locally, then inspect `mix.exs`, `lib/accountkit/application.ex`, and the router together.
+- Fixed initial dependency resolution by deferring money/accounting packages.
+- Ran `mix setup` successfully.
+- Next recommended action: boot the Phoenix server, then inspect `mix.exs`, `lib/accountkit/application.ex`, and the router together.
 

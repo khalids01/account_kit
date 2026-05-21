@@ -1,4 +1,7 @@
 import Config
+config :accountkit, token_signing_secret: "V7VU+6fEM8UH+dbVxb83ytZ4ZaEiBcNZ"
+config :bcrypt_elixir, log_rounds: 1
+config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
 
 # Configure your database
 #

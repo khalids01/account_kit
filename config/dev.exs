@@ -1,4 +1,5 @@
 import Config
+config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
 config :accountkit, Accountkit.Repo,
@@ -68,7 +69,7 @@ config :accountkit, AccountkitWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :accountkit, dev_routes: true
+config :accountkit, dev_routes: true, token_signing_secret: "It6qejjNK57jyv1elf6LiqMsn+L46AXu"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
