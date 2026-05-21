@@ -85,7 +85,7 @@ defmodule AccountkitWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
-      import AccountkitWeb.CoreComponents
+      use AccountkitWeb.Components.MishkaComponents
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
