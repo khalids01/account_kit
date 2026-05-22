@@ -86,7 +86,8 @@ defmodule Accountkit.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:scalar_plug, "~> 0.2.0"}
+      {:scalar_plug, "~> 0.2.0"},
+      {:hammer, "~> 6.0"}
     ]
   end
 

@@ -2,6 +2,9 @@ defmodule AccountkitWeb.Auth.LoginLive do
   use AccountkitWeb, :live_view
 
   alias Accountkit.Accounts.User
+  alias Accountkit.Auth.Email
+  alias Accountkit.RateLimit
+  alias AccountkitWeb.Auth.RemoteIp
 
   @impl true
   def mount(_params, _session, socket) do
@@ -59,13 +62,21 @@ defmodule AccountkitWeb.Auth.LoginLive do
 
   @impl true
   def handle_event("submit", %{"login" => params}, socket) do
-    email = normalize_email(params["email"])
+    email = Email.normalize(params["email"])
+    ip = RemoteIp.from_socket(socket)
 
     socket = assign_form(socket, %{"email" => email})
 
     cond do
       email == "" ->
         {:noreply, put_flash(socket, :error, "Enter your email address.")}
+
+      not Email.valid?(email) ->
+        {:noreply, put_flash(socket, :error, "Enter a valid email address.")}
+
+      RateLimit.denied?(:magic_link_sign_in, ip: ip, email: email) ->
+        {:noreply,
+         put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
 
       user_exists?(email) ->
         case request_magic_link(email) do
@@ -103,12 +114,5 @@ defmodule AccountkitWeb.Auth.LoginLive do
     User
     |> Ash.ActionInput.for_action(:request_magic_link, %{email: email}, authorize?: false)
     |> Ash.run_action()
-  end
-
-  defp normalize_email(email) do
-    email
-    |> to_string()
-    |> String.trim()
-    |> String.downcase()
   end
 end

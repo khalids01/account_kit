@@ -7,6 +7,8 @@ defmodule Accountkit.Application do
 
   @impl true
   def start(_type, _args) do
+    :ok = Accountkit.RateLimit.init_policy_cache()
+
     children = [
       AccountkitWeb.Telemetry,
       Accountkit.Repo,

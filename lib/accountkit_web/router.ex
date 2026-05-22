@@ -13,6 +13,7 @@ defmodule AccountkitWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :load_from_session
+    plug AccountkitWeb.Plugs.RemoteIp
   end
 
   pipeline :api do
@@ -31,7 +32,10 @@ defmodule AccountkitWeb.Router do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes,
-      on_mount: [{AccountkitWeb.LiveUserAuth, :live_no_user}] do
+      on_mount: [
+        {AccountkitWeb.LiveUserAuth, :assign_client_ip},
+        {AccountkitWeb.LiveUserAuth, :live_no_user}
+      ] do
       live "/login", Auth.LoginLive, :new
       live "/register", Auth.RegisterLive, :new
 
@@ -105,6 +109,18 @@ defmodule AccountkitWeb.Router do
 
       live_dashboard "/dashboard", metrics: AccountkitWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
+  scope "/", AccountkitWeb do
+    pipe_through :browser
+
+    ash_authentication_live_session :admin_routes,
+      on_mount: [
+        {AccountkitWeb.LiveUserAuth, :assign_client_ip},
+        {AccountkitWeb.LiveUserAuth, :live_user_required}
+      ] do
+      live "/admin/rate-limits", Admin.RateLimitsLive, :index
     end
   end
 
