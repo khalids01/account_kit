@@ -55,7 +55,10 @@ defmodule AccountkitWeb.Components.Alert do
   attr :id, :string, doc: "A unique identifier is used to manage state and interaction"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil, doc: "Specifies the title of the element"
-  attr :kind, :atom, default: :natural, doc: "used for styling and flash lookup"
+  attr :kind, :atom,
+    values: [:info, :error, :warning, :natural, :success, :danger],
+    default: :natural,
+    doc: "used for styling and flash lookup"
 
   attr :rest, :global,
     doc:
@@ -79,9 +82,7 @@ defmodule AccountkitWeb.Components.Alert do
     default: "font-normal",
     doc: "Determines custom class for the font weight"
 
-  attr :icon, :any,
-    default: "hero-chat-bubble-bottom-center-text",
-    doc: "Icon displayed alongside of an item"
+  attr :icon, :any, default: nil, doc: "Icon displayed alongside of an item"
 
   attr :class, :string, default: nil, doc: "Custom CSS class for additional styling"
 
@@ -100,18 +101,23 @@ defmodule AccountkitWeb.Components.Alert do
   slot :inner_block, doc: "Inner block that renders HEEx content"
 
   def flash(assigns) do
-    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.variant}-#{assigns.kind}" end)
+    assigns =
+      assigns
+      |> assign_new(:id, fn -> "flash-#{assigns.variant}-#{assigns.kind}" end)
+      |> assign(:icon, assigns[:icon] || flash_icon(assigns.kind, assigns.variant) || "hero-chat-bubble-bottom-center-text")
 
     ~H"""
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
+      phx-mounted={@variant == "toast" && show_alert("##{@id}")}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide_alert("##{@id}")}
       role="alert"
       aria-live="assertive"
       aria-labelledby={@title && @id && "#{@id}-title"}
       class={[
         "flash-alert leading-5",
+        @variant == "toast" && "max-w-md min-w-[min(100%,20rem)]",
         border_class(@border, @variant),
         color_variant(@variant, @kind),
         position_class(@position),
@@ -125,8 +131,19 @@ defmodule AccountkitWeb.Components.Alert do
       ]}
       {@rest}
     >
-      <div class="flex items-center justify-between gap-2">
-        <div>
+      <div class={[
+        "flex gap-3",
+        @variant == "toast" && "items-center",
+        @variant != "toast" && "items-center justify-between"
+      ]}>
+        <.icon
+          :if={@variant == "toast" && !is_nil(@icon)}
+          name={@icon}
+          class="toast-icon alert-icon shrink-0"
+          aria-hidden="true"
+        />
+
+        <div :if={@variant != "toast"} class="min-w-0 flex-1">
           <div :if={@title} class={@title_class} id={@id && "#{@id}-title"}>
             <.icon :if={!is_nil(@icon)} name={@icon} class="alert-icon" aria-hidden="true" /> {@title}
           </div>
@@ -134,8 +151,20 @@ defmodule AccountkitWeb.Components.Alert do
           <div class={@content_class}>{msg}</div>
         </div>
 
-        <button type="button" class={["group shrink-0", @button_class]} aria-label={gettext("close")}>
-          <.icon name="hero-x-mark-solid" class="alert-icon opacity-40 group-hover:opacity-70" />
+        <p :if={@variant == "toast"} class={["flex-1 text-sm font-medium", @content_class]}>
+          {msg}
+        </p>
+
+        <button
+          type="button"
+          class={[
+            "group shrink-0 cursor-pointer",
+            @variant == "toast" && "rounded-md p-1 hover:bg-base-content/10",
+            @button_class
+          ]}
+          aria-label={gettext("close")}
+        >
+          <.icon name="hero-x-mark" class="alert-icon size-4 opacity-50 group-hover:opacity-80" />
         </button>
       </div>
     </div>
@@ -376,9 +405,15 @@ defmodule AccountkitWeb.Components.Alert do
 
   defp position_class("top_left"), do: "fixed top-2 left-0 ml-2"
   defp position_class("top_right"), do: "fixed top-2 right-0 mr-2"
+  defp position_class("top_center"), do: "fixed top-2 left-1/2 -translate-x-1/2"
   defp position_class("bottom_left"), do: "fixed bottom-2 left-0 ml-2"
   defp position_class("bottom_right"), do: "fixed bottom-2 right-0 mr-2"
   defp position_class(params) when is_binary(params), do: params
+
+  defp flash_icon(:info, "toast"), do: "hero-check-circle"
+  defp flash_icon(:error, "toast"), do: "hero-exclamation-circle"
+  defp flash_icon(:warning, "toast"), do: "hero-exclamation-triangle"
+  defp flash_icon(_kind, _variant), do: nil
 
   defp border_class(_, variant)
        when variant in [
@@ -395,6 +430,27 @@ defmodule AccountkitWeb.Components.Alert do
   defp border_class("large", _), do: "border-4"
   defp border_class("extra_large", _), do: "border-[5px]"
   defp border_class(params, _) when is_binary(params), do: params
+
+  defp color_variant("toast", :info) do
+    [
+      "bg-base-100 text-base-content border-success/50 shadow-lg",
+      "[&_.toast-icon]:text-success"
+    ]
+  end
+
+  defp color_variant("toast", :warning) do
+    [
+      "bg-base-100 text-base-content border-warning/50 shadow-lg",
+      "[&_.toast-icon]:text-warning"
+    ]
+  end
+
+  defp color_variant("toast", type) when type in [:error, :danger] do
+    [
+      "bg-base-100 text-base-content border-error/50 shadow-lg",
+      "[&_.toast-icon]:text-error"
+    ]
+  end
 
   defp color_variant("base", _) do
     [
@@ -778,8 +834,8 @@ defmodule AccountkitWeb.Components.Alert do
       time: 300,
       transition:
         {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
-         "opacity-100 translate-y-0 sm:scale-100"}
+         "opacity-0 -translate-y-2 scale-95",
+         "opacity-100 translate-y-0 scale-100"}
     )
   end
 
@@ -818,8 +874,8 @@ defmodule AccountkitWeb.Components.Alert do
       time: 200,
       transition:
         {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:scale-100",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+         "opacity-100 translate-y-0 scale-100",
+         "opacity-0 -translate-y-2 scale-95"}
     )
   end
 end

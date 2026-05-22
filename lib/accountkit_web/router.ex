@@ -30,7 +30,11 @@ defmodule AccountkitWeb.Router do
   scope "/", AccountkitWeb do
     pipe_through :browser
 
-    ash_authentication_live_session :authenticated_routes do
+    ash_authentication_live_session :authenticated_routes,
+      on_mount: [{AccountkitWeb.LiveUserAuth, :live_no_user}] do
+      live "/login", Auth.LoginLive, :new
+      live "/register", Auth.RegisterLive, :new
+
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
@@ -59,18 +63,9 @@ defmodule AccountkitWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/sign-in", AuthController, :redirect_to_login
     auth_routes AuthController, Accountkit.Accounts.User, path: "/auth"
     sign_out_route AuthController
-
-    # Remove these if you'd like to use your own authentication views
-    sign_in_route register_path: "/register",
-                  reset_path: "/reset",
-                  auth_routes_prefix: "/auth",
-                  on_mount: [{AccountkitWeb.LiveUserAuth, :live_no_user}],
-                  overrides: [
-                    AccountkitWeb.AuthOverrides,
-                    Elixir.AshAuthentication.Phoenix.Overrides.DaisyUI
-                  ]
 
     # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",

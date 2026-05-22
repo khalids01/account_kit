@@ -41,7 +41,11 @@ defmodule AccountkitWeb.AuthController do
 
     conn
     |> put_flash(:error, message)
-    |> redirect(to: ~p"/sign-in")
+    |> redirect(to: ~p"/login")
+  end
+
+  def redirect_to_login(conn, _params) do
+    redirect(conn, to: ~p"/login")
   end
 
   def sign_out(conn, _params) do

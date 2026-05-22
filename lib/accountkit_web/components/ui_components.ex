@@ -8,7 +8,6 @@ defmodule AccountkitWeb.Components.UIComponents do
     router: AccountkitWeb.Router,
     statics: AccountkitWeb.static_paths()
 
-
   import AccountkitWeb.Components.Avatar, only: [avatar: 1]
   import AccountkitWeb.Components.Dropdown, only: [dropdown: 1, dropdown_content: 1]
   import AccountkitWeb.Components.Icon, only: [icon: 1]
@@ -62,7 +61,12 @@ defmodule AccountkitWeb.Components.UIComponents do
 
   def user_menu(assigns) do
     ~H"""
-    <.dropdown id={@id} :if={@current_scope && @current_scope.user} relative="relative" position="right">
+    <.dropdown
+      :if={@current_scope && @current_scope.user}
+      id={@id}
+      relative="relative"
+      position="right"
+    >
       <:trigger>
         <.button color="primary" icon="hero-chevron-down" right_icon>
           <.avatar
@@ -76,18 +80,23 @@ defmodule AccountkitWeb.Components.UIComponents do
       <.dropdown_content>
         <.list size="small">
           <:item icon="hero-user">
-            <.link navigate={~p"/users/profile"}>Profile</.link>
+            <.link navigate={
+              ~p"/users/profile"
+            }>Profile</.link>
           </:item>
           <:item icon="hero-cog">
-            <.link navigate={~p"/users/settings"}>Settings</.link>
+            <.link navigate={
+              ~p"/users/settings"
+            }>Settings</.link>
           </:item>
           <:item icon="hero-logout">
-            <.link navigate={~p"/auth/logout"}>Logout</.link>
+            <.link navigate={
+              ~p"/sign-out"
+            }>Logout</.link>
           </:item>
         </.list>∏
-        </.dropdown_content>
+      </.dropdown_content>
     </.dropdown>
-
     """
   end
 end

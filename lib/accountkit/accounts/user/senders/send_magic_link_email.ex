@@ -21,10 +21,9 @@ defmodule Accountkit.Accounts.User.Senders.SendMagicLinkEmail do
       end
 
     new()
-    # TODO: Replace with your email
-    |> from({"noreply", "noreply@example.com"})
+    |> from({"AccountKit", "noreply@example.com"})
     |> to(to_string(email))
-    |> subject("Your login link")
+    |> subject("Your AccountKit magic link")
     |> html_body(body(token: token, email: email))
     |> Mailer.deliver!()
   end
@@ -33,8 +32,10 @@ defmodule Accountkit.Accounts.User.Senders.SendMagicLinkEmail do
     # NOTE: You may have to change this to match your magic link acceptance URL.
 
     """
-    <p>Hello, #{params[:email]}! Click this link to sign in:</p>
+    <p>Hello, #{params[:email]}.</p>
+    <p>Click this link to continue to AccountKit:</p>
     <p><a href="#{url(~p"/magic_link/#{params[:token]}")}">#{url(~p"/magic_link/#{params[:token]}")}</a></p>
+    <p>If you did not request this link, you can ignore this email.</p>
     """
   end
 end

@@ -256,6 +256,25 @@ defmodule Accountkit.Accounts.User do
       # Uses the information from the token to create or sign in the user
       change AshAuthentication.Strategy.MagicLink.SignInChange
 
+      change fn changeset, context ->
+        token = Ash.Changeset.get_argument(changeset, :token)
+
+        with token when is_binary(token) <- token,
+             {:ok, %{"name" => name}, _resource} when is_binary(name) <-
+               AshAuthentication.Jwt.verify(
+                 token,
+                 changeset.resource,
+                 Ash.Context.to_opts(context),
+                 context
+               ),
+             name = String.trim(name),
+             true <- name != "" do
+          Ash.Changeset.force_change_attribute(changeset, :name, name)
+        else
+          _ -> changeset
+        end
+      end
+
       change {AshAuthentication.Strategy.RememberMe.MaybeGenerateTokenChange,
               strategy_name: :remember_me}
 
@@ -270,6 +289,18 @@ defmodule Accountkit.Accounts.User do
       end
 
       run AshAuthentication.Strategy.MagicLink.Request
+    end
+
+    action :request_signup_magic_link do
+      argument :name, :string do
+        allow_nil? false
+      end
+
+      argument :email, :ci_string do
+        allow_nil? false
+      end
+
+      run Accountkit.Accounts.User.Actions.RequestSignupMagicLink
     end
 
     read :sign_in_with_api_key do
@@ -289,6 +320,10 @@ defmodule Accountkit.Accounts.User do
 
     attribute :email, :ci_string do
       allow_nil? false
+      public? true
+    end
+
+    attribute :name, :string do
       public? true
     end
 

@@ -68,32 +68,64 @@ defmodule AccountkitWeb.Layouts do
 
   def flash_group(assigns) do
     ~H"""
-    <div id={@id} aria-live="polite">
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:error} flash={@flash} />
+    <div
+      id={@id}
+      aria-live="polite"
+      class="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4"
+    >
+      <.flash
+        kind={:info}
+        flash={@flash}
+        variant="toast"
+        width="fit"
+        rounded="extra_large"
+        padding="small"
+        border="extra_small"
+        class="pointer-events-auto"
+      />
+      <.flash
+        kind={:error}
+        flash={@flash}
+        variant="toast"
+        width="fit"
+        rounded="extra_large"
+        padding="small"
+        border="extra_small"
+        class="pointer-events-auto"
+      />
 
       <.flash
         id="client-error"
         kind={:error}
-        title={gettext("We can't find the internet")}
-        phx-disconnected={show(".phx-client-error #client-error") |> JS.remove_attribute("hidden")}
-        phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
+        variant="toast"
+        width="fit"
+        rounded="extra_large"
+        padding="small"
+        border="extra_small"
+        class="pointer-events-auto"
+        phx-disconnected={show_alert(".phx-client-error #client-error")}
+        phx-connected={hide_alert("#client-error")}
         hidden
       >
         {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
+        <.icon name="hero-arrow-path" class="ms-1 size-3 motion-safe:animate-spin" />
       </.flash>
 
       <.flash
         id="server-error"
         kind={:error}
-        title={gettext("Something went wrong!")}
-        phx-disconnected={show(".phx-server-error #server-error") |> JS.remove_attribute("hidden")}
-        phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
+        variant="toast"
+        width="fit"
+        rounded="extra_large"
+        padding="small"
+        border="extra_small"
+        class="pointer-events-auto"
+        phx-disconnected={show_alert(".phx-server-error #server-error")}
+        phx-connected={hide_alert("#server-error")}
         hidden
       >
-        {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
+        {gettext("Hang in there while we get back on track")}
+        <.icon name="hero-arrow-path" class="ms-1 size-3 motion-safe:animate-spin" />
       </.flash>
     </div>
     """
