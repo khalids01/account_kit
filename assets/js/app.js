@@ -45,6 +45,21 @@ topbar.config({
 });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
 window.addEventListener("phx:page-loading-stop", (_info) => topbar.hide());
+
+window.addEventListener("click", (event) => {
+  document.querySelectorAll("details[data-user-menu][open]").forEach((menu) => {
+    if (!menu.contains(event.target)) menu.removeAttribute("open");
+  });
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+
+  document.querySelectorAll("details[data-user-menu][open]").forEach((menu) => {
+    menu.removeAttribute("open");
+  });
+});
+
 // connect if there are any LiveViews on the page
 liveSocket.connect();
 // expose liveSocket on window for web console debug logs and latency simulation:

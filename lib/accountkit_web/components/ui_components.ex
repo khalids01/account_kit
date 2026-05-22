@@ -9,10 +9,7 @@ defmodule AccountkitWeb.Components.UIComponents do
     statics: AccountkitWeb.static_paths()
 
   import AccountkitWeb.Components.Avatar, only: [avatar: 1]
-  import AccountkitWeb.Components.Dropdown, only: [dropdown: 1, dropdown_content: 1]
   import AccountkitWeb.Components.Icon, only: [icon: 1]
-  import AccountkitWeb.Components.Button, only: [button: 1]
-  import AccountkitWeb.Components.List, only: [list: 1]
 
   attr :class, :any, default: nil
 
@@ -64,36 +61,61 @@ defmodule AccountkitWeb.Components.UIComponents do
       assign(assigns, :email, user_email(assigns.current_scope))
 
     ~H"""
-    <.dropdown
+    <details
       :if={@current_scope && @current_scope.user}
       id={@id}
-      relative="relative"
-      position="right"
+      data-user-menu
+      class="group relative"
     >
-      <:trigger>
-        <.button color="primary" icon="hero-chevron-down" right_icon>
-          <.avatar
-            size="small"
-            rounded="full"
-            color="primary"
-          >
-            {String.first(@email)}
-          </.avatar>
-        </.button>
-      </:trigger>
-      <.dropdown_content>
-        <.list size="small">
-          <:item icon="hero-user" class="pointer-events-none text-base-content/70">
-            {@email}
-          </:item>
-          <:item icon="hero-logout">
-            <.link navigate={
-              ~p"/sign-out"
-            }>Logout</.link>
-          </:item>
-        </.list>
-      </.dropdown_content>
-    </.dropdown>
+      <summary
+        class="inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-full border border-base-300 bg-base-100 shadow-sm transition hover:border-primary/60 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/40 [&::-webkit-details-marker]:hidden"
+        aria-haspopup="menu"
+        aria-controls={"#{@id}-content"}
+      >
+        <span class="sr-only">Open user menu</span>
+        <.avatar size="small" rounded="full" color="primary" class="uppercase">
+          {String.first(@email)}
+        </.avatar>
+      </summary>
+
+      <div
+        id={"#{@id}-content"}
+        role="menu"
+        class="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-xl border border-base-300 bg-base-100 p-2 text-sm shadow-xl"
+      >
+        <div class="border-b border-base-300 px-3 py-2">
+          <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Signed in as</p>
+          <p class="mt-1 truncate font-medium text-base-content">{@email}</p>
+        </div>
+
+        <.link
+          href="/profile"
+          role="menuitem"
+          class="mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-user" class="size-4" />
+          <span>Profile</span>
+        </.link>
+
+        <.link
+          href="/dashboard"
+          role="menuitem"
+          class="flex items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-squares-2x2" class="size-4" />
+          <span>Dashboard</span>
+        </.link>
+
+        <.link
+          href={~p"/sign-out"}
+          role="menuitem"
+          class="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
+          <span>Sign out</span>
+        </.link>
+      </div>
+    </details>
     """
   end
 
