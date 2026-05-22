@@ -1,9 +1,7 @@
 defmodule Accountkit.Auth.Email do
   @moduledoc """
-  Normalization and format validation for email addresses in auth flows.
+  Email normalization for auth flows. Format validation lives on form changesets.
   """
-
-  @email_format ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   @doc """
   Trims whitespace and lowercases the email.
@@ -14,13 +12,4 @@ defmodule Accountkit.Auth.Email do
     |> String.trim()
     |> String.downcase()
   end
-
-  @doc """
-  Returns true when the string looks like a valid email address.
-  """
-  def valid?(email) when is_binary(email) do
-    email != "" and Regex.match?(@email_format, email)
-  end
-
-  def valid?(_), do: false
 end

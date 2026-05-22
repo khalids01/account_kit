@@ -2,16 +2,15 @@ defmodule AccountkitWeb.Auth.RegisterLive do
   use AccountkitWeb, :live_view
 
   alias Accountkit.Accounts.User
-  alias Accountkit.Auth.Email
   alias Accountkit.RateLimit
-  alias AccountkitWeb.Auth.RemoteIp
+  alias AccountkitWeb.Auth.{RegisterForm, RemoteIp}
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:page_title, "Create account")
-     |> assign_form(%{"name" => "", "email" => ""})}
+     |> assign_form(%{})}
   end
 
   @impl true
@@ -28,34 +27,26 @@ defmodule AccountkitWeb.Auth.RegisterLive do
             </p>
           </div>
 
-          <.form for={@form} phx-submit="submit" class="space-y-5">
-            <div>
-              <label for={@form[:name].id} class="text-sm font-medium">Name</label>
-              <input
-                id={@form[:name].id}
-                name={@form[:name].name}
-                value={@form[:name].value}
-                type="text"
-                autocomplete="name"
-                required
-                class="input input-bordered mt-2 w-full"
-                placeholder="Khalid"
-              />
-            </div>
+          <.form for={@form} phx-submit="submit" phx-change="validate" class="space-y-5">
+            <.input
+              field={@form[:name]}
+              type="text"
+              label="Name"
+              autocomplete="name"
+              required
+              class="mt-2 w-full"
+              placeholder="Khalid"
+            />
 
-            <div>
-              <label for={@form[:email].id} class="text-sm font-medium">Email</label>
-              <input
-                id={@form[:email].id}
-                name={@form[:email].name}
-                value={@form[:email].value}
-                type="email"
-                autocomplete="email"
-                required
-                class="input input-bordered mt-2 w-full"
-                placeholder="you@example.com"
-              />
-            </div>
+            <.input
+              field={@form[:email]}
+              type="email"
+              label="Email"
+              autocomplete="email"
+              required
+              class="mt-2 w-full"
+              placeholder="you@example.com"
+            />
 
             <button type="submit" class="btn btn-primary w-full">
               Send signup link
@@ -75,32 +66,38 @@ defmodule AccountkitWeb.Auth.RegisterLive do
   end
 
   @impl true
+  def handle_event("validate", %{"register" => params}, socket) do
+    {:noreply, assign_form(socket, params)}
+  end
+
+  @impl true
   def handle_event("submit", %{"register" => params}, socket) do
-    name = params["name"] |> to_string() |> String.trim()
-    email = Email.normalize(params["email"])
+    changeset = RegisterForm.changeset(params)
     ip = RemoteIp.from_socket(socket)
-    socket = assign_form(socket, %{"name" => name, "email" => email})
 
     cond do
-      name == "" ->
-        {:noreply, put_flash(socket, :error, "Enter your name.")}
+      not changeset.valid? ->
+        {:noreply, assign_form(socket, changeset)}
 
-      email == "" ->
-        {:noreply, put_flash(socket, :error, "Enter your email address.")}
-
-      not Email.valid?(email) ->
-        {:noreply, put_flash(socket, :error, "Enter a valid email address.")}
-
-      RateLimit.denied?(:magic_link_sign_up, ip: ip, email: email) ->
+      RateLimit.denied?(:magic_link_sign_up,
+        ip: ip,
+        email: Ecto.Changeset.get_field(changeset, :email)
+      ) ->
         {:noreply,
          put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
 
-      user_exists?(email) ->
+      user_exists?(changeset) ->
         {:noreply,
-         put_flash(socket, :error, "An account already exists for that email. Sign in instead.")}
+         assign_form(socket,
+           Ecto.Changeset.add_error(
+             changeset,
+             :email,
+             "An account already exists for that email. Sign in instead."
+           )
+         )}
 
       true ->
-        case request_signup_magic_link(name, email) do
+        case request_signup_magic_link(changeset) do
           :ok ->
             {:noreply,
              put_flash(
@@ -115,11 +112,17 @@ defmodule AccountkitWeb.Auth.RegisterLive do
     end
   end
 
-  defp assign_form(socket, params) do
-    assign(socket, :form, to_form(params, as: :register))
+  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
+    assign(socket, :form, to_form(changeset, as: :register, action: :validate))
   end
 
-  defp user_exists?(email) do
+  defp assign_form(socket, params) when is_map(params) do
+    assign_form(socket, RegisterForm.changeset(params))
+  end
+
+  defp user_exists?(%Ecto.Changeset{} = changeset) do
+    email = Ecto.Changeset.get_field(changeset, :email)
+
     case get_user(email) do
       {:ok, %User{}} -> true
       _ -> false
@@ -132,7 +135,10 @@ defmodule AccountkitWeb.Auth.RegisterLive do
     |> Ash.read_one()
   end
 
-  defp request_signup_magic_link(name, email) do
+  defp request_signup_magic_link(%Ecto.Changeset{} = changeset) do
+    name = Ecto.Changeset.get_field(changeset, :name)
+    email = Ecto.Changeset.get_field(changeset, :email)
+
     User
     |> Ash.ActionInput.for_action(
       :request_signup_magic_link,

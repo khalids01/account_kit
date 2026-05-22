@@ -2,16 +2,15 @@ defmodule AccountkitWeb.Auth.LoginLive do
   use AccountkitWeb, :live_view
 
   alias Accountkit.Accounts.User
-  alias Accountkit.Auth.Email
   alias Accountkit.RateLimit
-  alias AccountkitWeb.Auth.RemoteIp
+  alias AccountkitWeb.Auth.{LoginForm, RemoteIp}
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:page_title, "Sign in")
-     |> assign_form(%{"email" => ""})}
+     |> assign_form(%{})}
   end
 
   @impl true
@@ -28,20 +27,16 @@ defmodule AccountkitWeb.Auth.LoginLive do
             </p>
           </div>
 
-          <.form for={@form} phx-submit="submit" class="space-y-5">
-            <div>
-              <label for={@form[:email].id} class="text-sm font-medium">Email</label>
-              <input
-                id={@form[:email].id}
-                name={@form[:email].name}
-                value={@form[:email].value}
-                type="email"
-                autocomplete="email"
-                required
-                class="input input-bordered mt-2 w-full"
-                placeholder="you@example.com"
-              />
-            </div>
+          <.form for={@form} phx-submit="submit" phx-change="validate" class="space-y-5">
+            <.input
+              field={@form[:email]}
+              type="email"
+              label="Email"
+              autocomplete="email"
+              required
+              class="mt-2 w-full"
+              placeholder="you@example.com"
+            />
 
             <button type="submit" class="btn btn-primary w-full">
               Send magic link
@@ -61,25 +56,28 @@ defmodule AccountkitWeb.Auth.LoginLive do
   end
 
   @impl true
+  def handle_event("validate", %{"login" => params}, socket) do
+    {:noreply, assign_form(socket, params)}
+  end
+
+  @impl true
   def handle_event("submit", %{"login" => params}, socket) do
-    email = Email.normalize(params["email"])
+    changeset = LoginForm.changeset(params)
     ip = RemoteIp.from_socket(socket)
 
-    socket = assign_form(socket, %{"email" => email})
-
     cond do
-      email == "" ->
-        {:noreply, put_flash(socket, :error, "Enter your email address.")}
+      not changeset.valid? ->
+        {:noreply, assign_form(socket, changeset)}
 
-      not Email.valid?(email) ->
-        {:noreply, put_flash(socket, :error, "Enter a valid email address.")}
-
-      RateLimit.denied?(:magic_link_sign_in, ip: ip, email: email) ->
+      RateLimit.denied?(:magic_link_sign_in,
+        ip: ip,
+        email: Ecto.Changeset.get_field(changeset, :email)
+      ) ->
         {:noreply,
          put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
 
-      user_exists?(email) ->
-        case request_magic_link(email) do
+      user_exists?(changeset) ->
+        case request_magic_link(changeset) do
           :ok ->
             {:noreply, put_flash(socket, :info, "Check your email for a magic sign-in link.")}
 
@@ -89,15 +87,27 @@ defmodule AccountkitWeb.Auth.LoginLive do
 
       true ->
         {:noreply,
-         put_flash(socket, :error, "No account exists for that email. Create an account first.")}
+         assign_form(socket,
+           Ecto.Changeset.add_error(
+             changeset,
+             :email,
+             "No account exists for that email. Create an account first."
+           )
+         )}
     end
   end
 
-  defp assign_form(socket, params) do
-    assign(socket, :form, to_form(params, as: :login))
+  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
+    assign(socket, :form, to_form(changeset, as: :login, action: :validate))
   end
 
-  defp user_exists?(email) do
+  defp assign_form(socket, params) when is_map(params) do
+    assign_form(socket, LoginForm.changeset(params))
+  end
+
+  defp user_exists?(%Ecto.Changeset{} = changeset) do
+    email = Ecto.Changeset.get_field(changeset, :email)
+
     case get_user(email) do
       {:ok, %User{}} -> true
       _ -> false
@@ -110,7 +120,9 @@ defmodule AccountkitWeb.Auth.LoginLive do
     |> Ash.read_one()
   end
 
-  defp request_magic_link(email) do
+  defp request_magic_link(%Ecto.Changeset{} = changeset) do
+    email = Ecto.Changeset.get_field(changeset, :email)
+
     User
     |> Ash.ActionInput.for_action(:request_magic_link, %{email: email}, authorize?: false)
     |> Ash.run_action()
