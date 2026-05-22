@@ -4,10 +4,7 @@ defmodule AccountkitWeb.Auth.RemoteIp do
   """
 
   def from_socket(socket) do
-    case Phoenix.LiveView.get_connect_info(socket, :peer_data) do
-      %{address: address} -> format_ip(address)
-      _ -> socket.assigns[:client_ip] || "unknown"
-    end
+    socket.assigns[:client_ip] || "unknown"
   end
 
   def from_session(session) when is_map(session) do

@@ -27,14 +27,14 @@ defmodule AccountkitWeb.Auth.LoginLive do
             </p>
           </div>
 
-          <.form for={@form} phx-submit="submit" class="space-y-5">
+          <.form for={@form} phx-submit="submit" phx-change="validate" class="space-y-5">
             <.input
               field={@form[:email]}
               type="email"
               label="Email"
               autocomplete="email"
               required
-              phx-blur="validate"
+              phx-debounce="blur"
               class="mt-2 w-full"
               placeholder="you@example.com"
             />
@@ -72,7 +72,10 @@ defmodule AccountkitWeb.Auth.LoginLive do
 
     cond do
       not changeset.valid? ->
-        {:noreply, assign_form(socket, changeset)}
+        {:noreply,
+         socket
+         |> put_flash(:error, first_error(changeset))
+         |> assign_form(changeset)}
 
       RateLimit.denied?(:magic_link_sign_in,
         ip: ip,
@@ -143,4 +146,7 @@ defmodule AccountkitWeb.Auth.LoginLive do
     |> Ash.ActionInput.for_action(:request_magic_link, %{email: email}, authorize?: false)
     |> Ash.run_action()
   end
+
+  defp first_error(%Ecto.Changeset{errors: [{_field, {message, _opts}} | _]}), do: message
+  defp first_error(_changeset), do: "Please fix the highlighted fields."
 end

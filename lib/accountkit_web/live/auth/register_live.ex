@@ -27,14 +27,14 @@ defmodule AccountkitWeb.Auth.RegisterLive do
             </p>
           </div>
 
-          <.form for={@form} phx-submit="submit" class="space-y-5">
+          <.form for={@form} phx-submit="submit" phx-change="validate" class="space-y-5">
             <.input
               field={@form[:name]}
               type="text"
               label="Name"
               autocomplete="name"
               required
-              phx-blur="validate"
+              phx-debounce="blur"
               class="mt-2 w-full"
               placeholder="Khalid"
             />
@@ -45,7 +45,7 @@ defmodule AccountkitWeb.Auth.RegisterLive do
               label="Email"
               autocomplete="email"
               required
-              phx-blur="validate"
+              phx-debounce="blur"
               class="mt-2 w-full"
               placeholder="you@example.com"
             />
@@ -83,7 +83,10 @@ defmodule AccountkitWeb.Auth.RegisterLive do
 
     cond do
       not changeset.valid? ->
-        {:noreply, assign_form(socket, changeset)}
+        {:noreply,
+         socket
+         |> put_flash(:error, first_error(changeset))
+         |> assign_form(changeset)}
 
       RateLimit.denied?(:magic_link_sign_up,
         ip: ip,
@@ -161,4 +164,7 @@ defmodule AccountkitWeb.Auth.RegisterLive do
     )
     |> Ash.run_action()
   end
+
+  defp first_error(%Ecto.Changeset{errors: [{_field, {message, _opts}} | _]}), do: message
+  defp first_error(_changeset), do: "Please fix the highlighted fields."
 end
