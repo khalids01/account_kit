@@ -23,6 +23,9 @@ end
 config :accountkit, AccountkitWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :accountkit,
+  platform_owner_email: System.get_env("ACCOUNTKIT_PLATFORM_OWNER_EMAIL")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

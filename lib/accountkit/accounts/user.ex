@@ -338,6 +338,9 @@ defmodule Accountkit.Accounts.User do
     has_many :valid_api_keys, Accountkit.Accounts.ApiKey do
       filter expr(valid)
     end
+
+    has_many :platform_roles, Accountkit.Accounts.PlatformRole
+    has_many :organization_memberships, Accountkit.Accounts.OrganizationMembership
   end
 
   identities do

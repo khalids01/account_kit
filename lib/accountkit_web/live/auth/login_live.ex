@@ -81,8 +81,7 @@ defmodule AccountkitWeb.Auth.LoginLive do
         ip: ip,
         email: Ecto.Changeset.get_field(changeset, :email)
       ) ->
-        {:noreply,
-         put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
+        {:noreply, put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
 
       user_exists?(changeset) ->
         case request_magic_link(changeset) do
@@ -102,9 +101,7 @@ defmodule AccountkitWeb.Auth.LoginLive do
         {:noreply,
          socket
          |> put_flash(:error, message)
-         |> assign_form(
-           Ecto.Changeset.add_error(changeset, :email, message)
-         )}
+         |> assign_form(Ecto.Changeset.add_error(changeset, :email, message))}
     end
   end
 

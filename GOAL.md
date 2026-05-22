@@ -40,6 +40,22 @@ Avoid positioning it as:
 
 ---
 
+## Role Model
+
+AccountKit uses scoped role assignments instead of a global `users.role` field.
+
+- `platform_owner` is a global AccountKit operator role. It can manage the self-hosted AccountKit platform and cross-organization control-plane concerns.
+- `org_admin` is scoped to one organization. It can manage that organization's apps, SSO/user-management settings, API keys, and later rate limits, without seeing or controlling other organizations.
+- `end_user` is the future app-scoped identity for people who log into customer applications through AccountKit. End users should not automatically get access to the AccountKit dashboard.
+
+Dashboard and control-plane access must be enforced server-side through authorization checks and route guards. UI links are convenience only and must never be the only access control.
+
+The first `platform_owner` is bootstrapped only from an explicit configured email. AccountKit must not silently promote the first registered user.
+
+`end_user` implementation is intentionally deferred until organizations, applications, and SSO flows are modeled together.
+
+---
+
 ## Target Stack
 
 AccountKit will be built using the Elixir/Phoenix/Ash ecosystem.

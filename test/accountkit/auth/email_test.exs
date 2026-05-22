@@ -6,5 +6,4 @@ defmodule Accountkit.Auth.EmailTest do
   test "normalize/1 trims and lowercases" do
     assert Email.normalize("  Foo@Example.COM ") == "foo@example.com"
   end
-
 end

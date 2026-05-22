@@ -21,23 +21,11 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "email",
-      "type": "citext"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "name",
+      "source": "key",
       "type": "text"
     },
     {
-      "allow_nil?": true,
+      "allow_nil?": false,
       "default": "nil",
       "generated?": false,
       "precision": null,
@@ -45,8 +33,32 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "hashed_password",
-      "type": "text"
+      "source": "limit",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "period_seconds",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "true",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "enabled",
+      "type": "boolean"
     },
     {
       "allow_nil?": true,
@@ -57,8 +69,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "confirmed_at",
-      "type": "utc_datetime_usec"
+      "source": "description",
+      "type": "text"
     }
   ],
   "base_filter": null,
@@ -66,20 +78,20 @@
   "create_table_options": null,
   "custom_indexes": [],
   "custom_statements": [],
-  "has_create_action": true,
-  "hash": "AE9163770F61CBF891E12D97D41561C64947D364CB643BE60E79E0B8F1C2238E",
+  "has_create_action": false,
+  "hash": "24BE83D01A55EC3BB888EFFAD6A05EBF0C44AE75CCFDF8CD245784F7A21C8899",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "users_unique_email_index",
+      "index_name": "rate_limit_policies_unique_key_index",
       "keys": [
         {
           "type": "atom",
-          "value": "email"
+          "value": "key"
         }
       ],
-      "name": "unique_email",
+      "name": "unique_key",
       "nils_distinct?": true,
       "where": null
     }
@@ -91,5 +103,5 @@
   },
   "repo": "Elixir.Accountkit.Repo",
   "schema": null,
-  "table": "users"
+  "table": "rate_limit_policies"
 }

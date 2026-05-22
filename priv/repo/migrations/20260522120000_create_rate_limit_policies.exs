@@ -38,9 +38,11 @@ defmodule Accountkit.Repo.Migrations.CreateRateLimitPolicies do
   defp default_policies do
     [
       {"magic_link_sign_in_ip", 5, 900, "Magic link sign-in attempts per IP (15 min window)"},
-      {"magic_link_sign_in_email", 3, 900, "Magic link sign-in attempts per email (15 min window)"},
+      {"magic_link_sign_in_email", 3, 900,
+       "Magic link sign-in attempts per email (15 min window)"},
       {"magic_link_sign_up_ip", 5, 900, "Magic link sign-up attempts per IP (15 min window)"},
-      {"magic_link_sign_up_email", 3, 900, "Magic link sign-up attempts per email (15 min window)"}
+      {"magic_link_sign_up_email", 3, 900,
+       "Magic link sign-up attempts per email (15 min window)"}
     ]
   end
 end

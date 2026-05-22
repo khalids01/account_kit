@@ -6,6 +6,8 @@ defmodule AccountkitWeb.LiveUserAuth do
   import Phoenix.Component
   use AccountkitWeb, :verified_routes
 
+  alias Accountkit.Accounts.Authorization
+
   # This is used for nested liveviews to fetch the current user.
   # To use, place the following at the top of that liveview:
   # on_mount {AccountkitWeb.LiveUserAuth, :current_user}
@@ -26,6 +28,32 @@ defmodule AccountkitWeb.LiveUserAuth do
       {:cont, socket}
     else
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+    end
+  end
+
+  def on_mount(:dashboard_user_required, _params, _session, socket) do
+    cond do
+      is_nil(socket.assigns[:current_user]) ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+
+      Authorization.dashboard_user?(socket.assigns.current_user) ->
+        {:cont, socket}
+
+      true ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+    end
+  end
+
+  def on_mount(:platform_owner_required, _params, _session, socket) do
+    cond do
+      is_nil(socket.assigns[:current_user]) ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+
+      Authorization.platform_owner?(socket.assigns.current_user) ->
+        {:cont, socket}
+
+      true ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
     end
   end
 

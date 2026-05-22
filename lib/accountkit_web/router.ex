@@ -118,7 +118,7 @@ defmodule AccountkitWeb.Router do
     ash_authentication_live_session :admin_routes,
       on_mount: [
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},
-        {AccountkitWeb.LiveUserAuth, :live_user_required}
+        {AccountkitWeb.LiveUserAuth, :dashboard_user_required}
       ] do
       live "/admin/rate-limits", Admin.RateLimitsLive, :index
     end

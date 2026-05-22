@@ -9,5 +9,8 @@ defmodule Accountkit.Accounts do
     resource Accountkit.Accounts.Token
     resource Accountkit.Accounts.User
     resource Accountkit.Accounts.ApiKey
+    resource Accountkit.Accounts.Organization
+    resource Accountkit.Accounts.OrganizationMembership
+    resource Accountkit.Accounts.PlatformRole
   end
 end

@@ -21,56 +21,32 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "key",
+      "source": "name",
       "type": "text"
     },
     {
       "allow_nil?": false,
-      "default": "nil",
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "limit",
-      "type": "bigint"
+      "source": "created_at",
+      "type": "utc_datetime_usec"
     },
     {
       "allow_nil?": false,
-      "default": "nil",
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "period_seconds",
-      "type": "bigint"
-    },
-    {
-      "allow_nil?": false,
-      "default": "true",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "enabled",
-      "type": "boolean"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "description",
-      "type": "text"
+      "source": "updated_at",
+      "type": "utc_datetime_usec"
     }
   ],
   "base_filter": null,
@@ -78,20 +54,20 @@
   "create_table_options": null,
   "custom_indexes": [],
   "custom_statements": [],
-  "has_create_action": false,
-  "hash": "FE6F64C244DB14ACE1051978A99EBC5796ED0D7A01BBE6D659F491206231299D",
+  "has_create_action": true,
+  "hash": "3E04D295435BA42114125EAA54A215FD21ACD79119B50813FC912A434AA6A299",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "rate_limit_policies_unique_key_index",
+      "index_name": "organizations_unique_name_index",
       "keys": [
         {
           "type": "atom",
-          "value": "key"
+          "value": "name"
         }
       ],
-      "name": "unique_key",
+      "name": "unique_name",
       "nils_distinct?": true,
       "where": null
     }
@@ -103,5 +79,5 @@
   },
   "repo": "Elixir.Accountkit.Repo",
   "schema": null,
-  "table": "rate_limit_policies"
+  "table": "organizations"
 }
