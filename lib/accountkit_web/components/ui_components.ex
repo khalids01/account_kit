@@ -60,6 +60,9 @@ defmodule AccountkitWeb.Components.UIComponents do
   attr :current_scope, :any, default: nil
 
   def user_menu(assigns) do
+    assigns =
+      assign(assigns, :email, user_email(assigns.current_scope))
+
     ~H"""
     <.dropdown
       :if={@current_scope && @current_scope.user}
@@ -73,30 +76,27 @@ defmodule AccountkitWeb.Components.UIComponents do
             size="small"
             rounded="full"
             color="primary"
-            text={String.first(@current_scope && @current_scope.user.email)}
-          />
+          >
+            {String.first(@email)}
+          </.avatar>
         </.button>
       </:trigger>
       <.dropdown_content>
         <.list size="small">
-          <:item icon="hero-user">
-            <.link navigate={
-              ~p"/users/profile"
-            }>Profile</.link>
-          </:item>
-          <:item icon="hero-cog">
-            <.link navigate={
-              ~p"/users/settings"
-            }>Settings</.link>
+          <:item icon="hero-user" class="pointer-events-none text-base-content/70">
+            {@email}
           </:item>
           <:item icon="hero-logout">
             <.link navigate={
               ~p"/sign-out"
             }>Logout</.link>
           </:item>
-        </.list>∏
+        </.list>
       </.dropdown_content>
     </.dropdown>
     """
   end
+
+  defp user_email(%{user: %{email: email}}) when not is_nil(email), do: to_string(email)
+  defp user_email(_current_scope), do: ""
 end

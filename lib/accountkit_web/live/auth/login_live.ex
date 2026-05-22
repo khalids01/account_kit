@@ -35,7 +35,7 @@ defmodule AccountkitWeb.Auth.LoginLive do
               autocomplete="email"
               required
               phx-debounce="blur"
-              class="mt-2 w-full"
+              class="mt-2 w-full !px-2 !h-10"
               placeholder="you@example.com"
             />
 

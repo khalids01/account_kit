@@ -1,7 +1,13 @@
 defmodule AccountkitWeb.AuthOverrides do
   use AshAuthentication.Phoenix.Overrides
 
-  # configure your UI overrides here
+  override AshAuthentication.Phoenix.Components.Banner do
+    set :href_url, "/"
+    set :image_class, "h-12 w-auto"
+    set :image_url, "/images/logo.svg"
+    set :dark_image_url, nil
+    set :text, nil
+  end
 
   # First argument to `override` is the component name you are overriding.
   # The body contains any number of configurations you wish to override
