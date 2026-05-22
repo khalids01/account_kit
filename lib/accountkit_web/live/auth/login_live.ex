@@ -27,13 +27,14 @@ defmodule AccountkitWeb.Auth.LoginLive do
             </p>
           </div>
 
-          <.form for={@form} phx-submit="submit" phx-change="validate" class="space-y-5">
+          <.form for={@form} phx-submit="submit" class="space-y-5">
             <.input
               field={@form[:email]}
               type="email"
               label="Email"
               autocomplete="email"
               required
+              phx-blur="validate"
               class="mt-2 w-full"
               placeholder="you@example.com"
             />
@@ -57,12 +58,16 @@ defmodule AccountkitWeb.Auth.LoginLive do
 
   @impl true
   def handle_event("validate", %{"login" => params}, socket) do
-    {:noreply, assign_form(socket, params)}
+    {:noreply, assign_form(socket, params, :validate)}
+  end
+
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
   end
 
   @impl true
   def handle_event("submit", %{"login" => params}, socket) do
-    changeset = LoginForm.changeset(params)
+    changeset = LoginForm.changeset(params, action: :submit)
     ip = RemoteIp.from_socket(socket)
 
     cond do
@@ -79,30 +84,41 @@ defmodule AccountkitWeb.Auth.LoginLive do
       user_exists?(changeset) ->
         case request_magic_link(changeset) do
           :ok ->
-            {:noreply, put_flash(socket, :info, "Check your email for a magic sign-in link.")}
+            {:noreply,
+             socket
+             |> put_flash(:info, "Check your email for a magic sign-in link.")
+             |> assign_form(%{})}
 
           {:error, _error} ->
             {:noreply, put_flash(socket, :error, "Could not send the magic link. Try again.")}
         end
 
       true ->
+        message = "No account exists for that email. Create an account first."
+
         {:noreply,
-         assign_form(socket,
-           Ecto.Changeset.add_error(
-             changeset,
-             :email,
-             "No account exists for that email. Create an account first."
-           )
+         socket
+         |> put_flash(:error, message)
+         |> assign_form(
+           Ecto.Changeset.add_error(changeset, :email, message)
          )}
     end
   end
 
+  def handle_event("submit", _params, socket) do
+    {:noreply, put_flash(socket, :error, "Something went wrong. Please try again.")}
+  end
+
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    assign(socket, :form, to_form(changeset, as: :login, action: :validate))
+    assign(socket, :form, to_form(changeset, as: :login))
   end
 
   defp assign_form(socket, params) when is_map(params) do
-    assign_form(socket, LoginForm.changeset(params))
+    assign_form(socket, params, nil)
+  end
+
+  defp assign_form(socket, params, action) when is_map(params) do
+    assign_form(socket, LoginForm.changeset(params, action: action))
   end
 
   defp user_exists?(%Ecto.Changeset{} = changeset) do

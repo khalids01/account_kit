@@ -27,13 +27,14 @@ defmodule AccountkitWeb.Auth.RegisterLive do
             </p>
           </div>
 
-          <.form for={@form} phx-submit="submit" phx-change="validate" class="space-y-5">
+          <.form for={@form} phx-submit="submit" class="space-y-5">
             <.input
               field={@form[:name]}
               type="text"
               label="Name"
               autocomplete="name"
               required
+              phx-blur="validate"
               class="mt-2 w-full"
               placeholder="Khalid"
             />
@@ -44,6 +45,7 @@ defmodule AccountkitWeb.Auth.RegisterLive do
               label="Email"
               autocomplete="email"
               required
+              phx-blur="validate"
               class="mt-2 w-full"
               placeholder="you@example.com"
             />
@@ -67,12 +69,16 @@ defmodule AccountkitWeb.Auth.RegisterLive do
 
   @impl true
   def handle_event("validate", %{"register" => params}, socket) do
-    {:noreply, assign_form(socket, params)}
+    {:noreply, assign_form(socket, params, :validate)}
+  end
+
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
   end
 
   @impl true
   def handle_event("submit", %{"register" => params}, socket) do
-    changeset = RegisterForm.changeset(params)
+    changeset = RegisterForm.changeset(params, action: :submit)
     ip = RemoteIp.from_socket(socket)
 
     cond do
@@ -87,13 +93,13 @@ defmodule AccountkitWeb.Auth.RegisterLive do
          put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
 
       user_exists?(changeset) ->
+        message = "An account already exists for that email. Sign in instead."
+
         {:noreply,
-         assign_form(socket,
-           Ecto.Changeset.add_error(
-             changeset,
-             :email,
-             "An account already exists for that email. Sign in instead."
-           )
+         socket
+         |> put_flash(:error, message)
+         |> assign_form(
+           Ecto.Changeset.add_error(changeset, :email, message)
          )}
 
       true ->
@@ -112,12 +118,20 @@ defmodule AccountkitWeb.Auth.RegisterLive do
     end
   end
 
+  def handle_event("submit", _params, socket) do
+    {:noreply, put_flash(socket, :error, "Something went wrong. Please try again.")}
+  end
+
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    assign(socket, :form, to_form(changeset, as: :register, action: :validate))
+    assign(socket, :form, to_form(changeset, as: :register))
   end
 
   defp assign_form(socket, params) when is_map(params) do
-    assign_form(socket, RegisterForm.changeset(params))
+    assign_form(socket, params, nil)
+  end
+
+  defp assign_form(socket, params, action) when is_map(params) do
+    assign_form(socket, RegisterForm.changeset(params, action: action))
   end
 
   defp user_exists?(%Ecto.Changeset{} = changeset) do

@@ -10,7 +10,7 @@ defmodule AccountkitWeb.Auth.RegisterForm do
 
   @types %{name: :string, email: :string}
 
-  def changeset(params \\ %{}) do
+  def changeset(params \\ %{}, opts \\ []) do
     {%{}, @types}
     |> cast(params, [:name, :email])
     |> update_change(:name, &trim_field/1)
@@ -18,7 +18,11 @@ defmodule AccountkitWeb.Auth.RegisterForm do
     |> validate_required([:name], message: "Enter your name.")
     |> validate_required([:email], message: "Enter your email address.")
     |> validate_format(:email, @email_format, message: "Enter a valid email address.")
+    |> put_form_action(opts[:action])
   end
+
+  defp put_form_action(changeset, nil), do: changeset
+  defp put_form_action(changeset, action), do: %{changeset | action: action}
 
   defp trim_field(value) when is_binary(value), do: String.trim(value)
   defp trim_field(value), do: value

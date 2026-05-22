@@ -110,7 +110,7 @@ defmodule AccountkitWeb.Components.Alert do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
-      phx-mounted={@variant == "toast" && show_alert("##{@id}")}
+      phx-mounted={@variant != "toast" && show_alert("##{@id}")}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide_alert("##{@id}")}
       role="alert"
       aria-live="assertive"
