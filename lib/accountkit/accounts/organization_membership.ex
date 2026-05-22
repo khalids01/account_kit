@@ -48,6 +48,14 @@ defmodule Accountkit.Accounts.OrganizationMembership do
 
       filter expr(user_id == ^arg(:user_id))
     end
+
+    read :for_organization do
+      argument :organization_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(organization_id == ^arg(:organization_id))
+    end
   end
 
   policies do
@@ -60,7 +68,12 @@ defmodule Accountkit.Accounts.OrganizationMembership do
       authorize_if Accountkit.Accounts.Checks.PlatformOwner
     end
 
-    policy action_type([:create, :destroy]) do
+    policy action(:create) do
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+      authorize_if Accountkit.Accounts.Checks.CreatingFirstOwnOrgAdminMembership
+    end
+
+    policy action(:destroy) do
       authorize_if Accountkit.Accounts.Checks.PlatformOwner
     end
   end

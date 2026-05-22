@@ -15,12 +15,12 @@ defmodule Accountkit.Accounts.Organization do
 
     create :create do
       primary? true
-      accept [:name]
+      accept [:name, :text_logo]
     end
 
     update :update do
       primary? true
-      accept [:name]
+      accept [:name, :text_logo]
     end
   end
 
@@ -29,7 +29,17 @@ defmodule Accountkit.Accounts.Organization do
       authorize_if always()
     end
 
-    policy always() do
+    policy action(:create) do
+      authorize_if Accountkit.Accounts.Checks.NeedsOrganizationOnboarding
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+    end
+
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via([:memberships, :user])
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+    end
+
+    policy action_type([:update, :destroy]) do
       authorize_if Accountkit.Accounts.Checks.PlatformOwner
     end
   end
@@ -41,6 +51,12 @@ defmodule Accountkit.Accounts.Organization do
       allow_nil? false
       public? true
       constraints trim?: true, allow_empty?: false
+    end
+
+    attribute :text_logo, :string do
+      allow_nil? false
+      public? true
+      constraints trim?: true, allow_empty?: false, max_length: 32
     end
 
     create_timestamp :created_at

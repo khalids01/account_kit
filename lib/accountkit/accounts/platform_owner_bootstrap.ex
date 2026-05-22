@@ -8,11 +8,11 @@ defmodule Accountkit.Accounts.PlatformOwnerBootstrap do
 
   require Logger
 
+  alias Accountkit.Auth.Email
   alias Accountkit.Accounts.{PlatformRole, User}
 
   def run do
-    :accountkit
-    |> Application.get_env(:platform_owner_email)
+    configured_email()
     |> grant()
     |> log_result()
   end
@@ -21,7 +21,7 @@ defmodule Accountkit.Accounts.PlatformOwnerBootstrap do
   def grant(""), do: {:error, :missing_email}
 
   def grant(email) when is_binary(email) do
-    email = String.trim(email)
+    email = Email.normalize(email)
 
     if email == "" do
       {:error, :missing_email}
@@ -33,6 +33,18 @@ defmodule Accountkit.Accounts.PlatformOwnerBootstrap do
       end
     end
   end
+
+  def grant_if_configured_user(%User{email: email} = user) do
+    configured_email = configured_email()
+
+    if configured_email && Email.normalize(email) == configured_email do
+      grant_user(user)
+    else
+      {:ok, :not_configured_owner}
+    end
+  end
+
+  def grant_if_configured_user(_user), do: {:ok, :not_configured_owner}
 
   defp grant_user(%User{id: user_id}) do
     if platform_owner_exists?(user_id) do
@@ -63,6 +75,39 @@ defmodule Accountkit.Accounts.PlatformOwnerBootstrap do
     PlatformRole
     |> Ash.Changeset.for_create(:create, %{user_id: user_id, role: :platform_owner})
     |> Ash.create(authorize?: false)
+  end
+
+  defp normalize_configured_email(nil), do: nil
+  defp normalize_configured_email(""), do: nil
+
+  defp normalize_configured_email(email) when is_binary(email) do
+    normalized_email = Email.normalize(email)
+    if normalized_email == "", do: nil, else: normalized_email
+  end
+
+  defp configured_email do
+    :accountkit
+    |> Application.get_env(:platform_owner_email)
+    |> Kernel.||(System.get_env("ACCOUNTKIT_PLATFORM_OWNER_EMAIL"))
+    |> Kernel.||(read_env_file_value("ACCOUNTKIT_PLATFORM_OWNER_EMAIL"))
+    |> normalize_configured_email()
+  end
+
+  defp read_env_file_value(key) do
+    env_path = Path.expand("../../../.env", __DIR__)
+
+    if File.exists?(env_path) do
+      env_path
+      |> File.stream!()
+      |> Stream.map(&String.trim/1)
+      |> Stream.reject(&(&1 == "" or String.starts_with?(&1, "#")))
+      |> Enum.find_value(fn line ->
+        case String.split(line, "=", parts: 2) do
+          [^key, value] -> value |> String.trim() |> String.trim_leading("\"") |> String.trim_trailing("\"")
+          _ -> nil
+        end
+      end)
+    end
   end
 
   defp log_result({:ok, :created} = result) do

@@ -2,8 +2,11 @@ defmodule AccountkitWeb.AuthController do
   use AccountkitWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
+  alias Accountkit.Accounts.{Authorization, PlatformOwnerBootstrap}
+
   def success(conn, activity, user, _token) do
-    return_to = get_session(conn, :return_to) || ~p"/"
+    return_to = get_session(conn, :return_to)
+    PlatformOwnerBootstrap.grant_if_configured_user(user)
 
     message =
       case activity do
@@ -18,7 +21,7 @@ defmodule AccountkitWeb.AuthController do
     # If your resource has a different name, update the assign name here (i.e :current_admin)
     |> assign(:current_user, user)
     |> put_flash(:info, message)
-    |> redirect(to: return_to)
+    |> redirect(to: signed_in_path(return_to, user))
   end
 
   def failure(conn, activity, reason) do
@@ -56,4 +59,23 @@ defmodule AccountkitWeb.AuthController do
     |> put_flash(:info, "You are now signed out")
     |> redirect(to: return_to)
   end
+
+  defp signed_in_path(return_to, user) do
+    cond do
+      safe_return_to?(return_to) ->
+        return_to
+
+      Authorization.dashboard_user?(user) ->
+        ~p"/dashboard"
+
+      true ->
+        ~p"/onboarding/organization"
+    end
+  end
+
+  defp safe_return_to?(return_to) when is_binary(return_to) do
+    String.starts_with?(return_to, "/") and not String.starts_with?(return_to, "//")
+  end
+
+  defp safe_return_to?(_return_to), do: false
 end

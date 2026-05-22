@@ -2,6 +2,7 @@ defmodule AccountkitWeb.Components.UIComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
+  alias Accountkit.Accounts.Authorization
 
   use Phoenix.VerifiedRoutes,
     endpoint: AccountkitWeb.Endpoint,
@@ -59,6 +60,8 @@ defmodule AccountkitWeb.Components.UIComponents do
   def user_menu(assigns) do
     assigns =
       assign(assigns, :email, user_email(assigns.current_scope))
+      |> assign(:platform_owner?, Authorization.platform_owner?(assigns.current_scope && assigns.current_scope.user))
+      |> assign(:dashboard_user?, Authorization.dashboard_user?(assigns.current_scope && assigns.current_scope.user))
 
     ~H"""
     <details
@@ -98,6 +101,17 @@ defmodule AccountkitWeb.Components.UIComponents do
         </.link>
 
         <.link
+          :if={@platform_owner?}
+          href="/dashboard"
+          role="menuitem"
+          class="flex items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-shield-check" class="size-4" />
+          <span>Admin Dashboard</span>
+        </.link>
+
+        <.link
+          :if={!@platform_owner? && @dashboard_user?}
           href="/dashboard"
           role="menuitem"
           class="flex items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"

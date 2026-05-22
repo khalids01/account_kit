@@ -39,4 +39,20 @@ defmodule Accountkit.Accounts.PlatformOwnerBootstrapTest do
     assert {:ok, :already_exists} = PlatformOwnerBootstrap.run()
     assert Authorization.platform_owner?(user)
   end
+
+  test "grants platform owner to the authenticated configured user" do
+    user = Ash.Seed.seed!(User, %{email: "AuthOwner@Example.COM", name: "Owner"})
+    Application.put_env(:accountkit, :platform_owner_email, " authowner@example.com ")
+
+    assert {:ok, :created} = PlatformOwnerBootstrap.grant_if_configured_user(user)
+    assert Authorization.platform_owner?(user)
+  end
+
+  test "does not grant platform owner to a non-matching authenticated user" do
+    user = Ash.Seed.seed!(User, %{email: "user@example.com", name: "User"})
+    Application.put_env(:accountkit, :platform_owner_email, "owner@example.com")
+
+    assert {:ok, :not_configured_owner} = PlatformOwnerBootstrap.grant_if_configured_user(user)
+    refute Authorization.platform_owner?(user)
+  end
 end

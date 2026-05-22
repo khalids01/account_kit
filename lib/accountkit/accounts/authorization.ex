@@ -37,6 +37,22 @@ defmodule Accountkit.Accounts.Authorization do
 
   def dashboard_user?(_user), do: false
 
+  def onboarding_required?(%{id: user_id} = user) when not is_nil(user_id) do
+    not dashboard_user?(user)
+  end
+
+  def onboarding_required?(_user), do: false
+
+  def first_org_membership(%{id: user_id}) when not is_nil(user_id) do
+    OrganizationMembership
+    |> Ash.Query.for_read(:for_user, %{user_id: user_id}, authorize?: false)
+    |> Ash.Query.load(:organization)
+    |> Ash.read!()
+    |> List.first()
+  end
+
+  def first_org_membership(_user), do: nil
+
   defp org_membership_exists?(user_id) do
     OrganizationMembership
     |> Ash.Query.for_read(:for_user, %{user_id: user_id}, authorize?: false)

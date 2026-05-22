@@ -40,7 +40,7 @@ defmodule AccountkitWeb.LiveUserAuth do
         {:cont, socket}
 
       true ->
-        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/onboarding/organization")}
     end
   end
 

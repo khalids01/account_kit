@@ -115,6 +115,23 @@ defmodule AccountkitWeb.Router do
   scope "/", AccountkitWeb do
     pipe_through :browser
 
+    ash_authentication_live_session :signed_in_routes,
+      on_mount: [
+        {AccountkitWeb.LiveUserAuth, :assign_client_ip},
+        {AccountkitWeb.LiveUserAuth, :live_user_required}
+      ] do
+      live "/profile", ProfileLive, :show
+      live "/onboarding/organization", Onboarding.OrganizationLive, :new
+    end
+
+    ash_authentication_live_session :dashboard_routes,
+      on_mount: [
+        {AccountkitWeb.LiveUserAuth, :assign_client_ip},
+        {AccountkitWeb.LiveUserAuth, :dashboard_user_required}
+      ] do
+      live "/dashboard", DashboardLive, :show
+    end
+
     ash_authentication_live_session :admin_routes,
       on_mount: [
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},
