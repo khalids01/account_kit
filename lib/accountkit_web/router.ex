@@ -130,6 +130,7 @@ defmodule AccountkitWeb.Router do
         {AccountkitWeb.LiveUserAuth, :dashboard_user_required}
       ] do
       live "/dashboard", DashboardLive, :show
+      live "/dashboard/organizations", Dashboard.OrganizationsLive, :index
     end
 
     ash_authentication_live_session :admin_routes,

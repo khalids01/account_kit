@@ -22,6 +22,10 @@ defmodule Accountkit.Accounts.Organization do
       primary? true
       accept [:name, :text_logo]
     end
+
+    read :list_for_platform do
+      description "List all organizations for the platform control plane"
+    end
   end
 
   policies do
@@ -65,6 +69,10 @@ defmodule Accountkit.Accounts.Organization do
 
   relationships do
     has_many :memberships, Accountkit.Accounts.OrganizationMembership
+  end
+
+  calculations do
+    calculate :end_users_count, :integer, expr(0)
   end
 
   identities do

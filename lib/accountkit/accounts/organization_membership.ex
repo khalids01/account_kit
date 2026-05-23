@@ -56,6 +56,12 @@ defmodule Accountkit.Accounts.OrganizationMembership do
 
       filter expr(organization_id == ^arg(:organization_id))
     end
+
+    read :list_org_admins_for_platform do
+      description "List org_admin memberships for the platform control plane"
+
+      filter expr(role == :org_admin)
+    end
   end
 
   policies do

@@ -3,6 +3,7 @@ defmodule AccountkitWeb.Onboarding.OrganizationLive do
 
   alias Accountkit.Accounts.{Authorization, Organization, OrganizationMembership}
   alias Accountkit.Repo
+  alias AccountkitWeb.Auth.OrganizationForm
 
   @impl true
   def mount(_params, _session, socket) do
@@ -42,6 +43,7 @@ defmodule AccountkitWeb.Onboarding.OrganizationLive do
               type="text"
               label="Organization name"
               required
+              phx-debounce="blur"
               class="mt-2 w-full"
               placeholder="Acme Inc"
             />
@@ -52,6 +54,7 @@ defmodule AccountkitWeb.Onboarding.OrganizationLive do
               label="Text logo"
               required
               maxlength="32"
+              phx-debounce="blur"
               class="mt-2 w-full"
               placeholder="Acme"
             />
@@ -68,24 +71,38 @@ defmodule AccountkitWeb.Onboarding.OrganizationLive do
 
   @impl true
   def handle_event("validate", %{"organization" => params}, socket) do
-    {:noreply, assign_form(socket, params)}
+    {:noreply, assign_form(socket, params, :validate)}
   end
 
   def handle_event("save", %{"organization" => params}, socket) do
-    case create_organization_with_membership(socket.assigns.current_user, params) do
-      {:ok, _organization} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Organization created.")
-         |> push_navigate(to: ~p"/dashboard")}
+    changeset = OrganizationForm.changeset(params, action: :submit)
 
-      {:error, message} ->
-        {:noreply, put_flash(socket, :error, message)}
+    if changeset.valid? do
+      case create_organization_with_membership(socket.assigns.current_user, params) do
+        {:ok, _organization} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Organization created.")
+           |> push_navigate(to: ~p"/dashboard")}
+
+        {:error, message} ->
+          {:noreply, put_flash(socket, :error, message)}
+      end
+    else
+      {:noreply, assign_form(socket, changeset)}
     end
   end
 
-  defp assign_form(socket, params) do
-    assign(socket, :form, to_form(params, as: :organization))
+  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
+    assign(socket, :form, to_form(changeset, as: :organization))
+  end
+
+  defp assign_form(socket, params) when is_map(params) do
+    assign_form(socket, params, nil)
+  end
+
+  defp assign_form(socket, params, action) when is_map(params) do
+    assign_form(socket, OrganizationForm.changeset(params, action: action))
   end
 
   defp create_organization_with_membership(user, params) do

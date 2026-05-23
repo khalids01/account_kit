@@ -313,6 +313,11 @@ defmodule Accountkit.Accounts.User do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end
+
+    policy action_type(:read) do
+      authorize_if expr(id == ^actor(:id))
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+    end
   end
 
   attributes do
