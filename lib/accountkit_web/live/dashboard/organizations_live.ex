@@ -32,7 +32,15 @@ defmodule AccountkitWeb.Dashboard.OrganizationsLive do
       page_title={@page_title}
       active_nav={:organizations}
     >
-      <.tabs id="organizations-tabs" variant="pills" color="primary" padding="small">
+      <.tabs
+        id="organizations-tabs"
+        variant="nav_pills"
+        color="base"
+        padding="extra_small"
+        rounded="large"
+        gap="small"
+        class="[&_.tab-nav-pills]:rounded-xl [&_.tab-nav-pills]:border [&_.tab-nav-pills]:border-base-300 [&_.tab-nav-pills]:bg-base-200/50 [&_.tab-nav-pills]:p-1 [&_.tab-trigger]:rounded-lg [&_.tab-trigger]:!p-2 [&_.tab-trigger]:text-base-content/70 [&_.tab-trigger.active-tab]:!bg-primary [&_.tab-trigger.active-tab]:!text-primary-content [&_.tab-trigger.active-tab]:shadow-sm dark:[&_.tab-trigger.active-tab]:!bg-primary dark:[&_.tab-trigger.active-tab]:!text-primary-content"
+      >
         <:tab active>Organizations</:tab>
         <:tab>Owners</:tab>
 
@@ -59,7 +67,7 @@ defmodule AccountkitWeb.Dashboard.OrganizationsLive do
 
   defp organizations_table(assigns) do
     ~H"""
-    <div class="hidden overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm md:block">
+    <div class="hidden overflow-x-auto rounded-2xl border border-base-300 bg-base-100 shadow-sm md:block md:overflow-visible">
       <table class="w-full text-left text-sm">
         <thead class="border-b border-base-300 bg-base-200/50 text-xs uppercase tracking-wide text-base-content/60">
           <tr>
@@ -76,7 +84,7 @@ defmodule AccountkitWeb.Dashboard.OrganizationsLive do
             <td class="px-4 py-3 text-base-content/70">{org_admin_label(org)}</td>
             <td class="px-4 py-3 text-base-content/70">{org.end_users_count}</td>
             <td class="px-4 py-3 text-base-content/70">{format_datetime(org.created_at)}</td>
-            <td class="px-4 py-3 text-right">
+            <td class="relative px-4 py-3 text-right">
               <.org_actions_menu id={"org-actions-#{org.id}"} />
             </td>
           </tr>
@@ -176,24 +184,47 @@ defmodule AccountkitWeb.Dashboard.OrganizationsLive do
 
   defp org_actions_menu(assigns) do
     ~H"""
-    <.dropdown id={@id} relative="relative" position="bottom" width="w-40">
-      <:trigger>
+    <details id={@id} data-user-menu class="group relative">
+      <summary
+        class="inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-lg border border-base-300 bg-base-100 shadow-sm transition hover:border-primary/60 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/40 [&::-webkit-details-marker]:hidden"
+        aria-haspopup="menu"
+        aria-controls={"#{@id}-content"}
+      >
+        <span class="sr-only">Organization actions</span>
+        <.icon name="hero-ellipsis-horizontal" class="size-5" />
+      </summary>
+
+      <div
+        id={"#{@id}-content"}
+        role="menu"
+        class="absolute right-0 top-full z-50 mt-2 w-48 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-xl border border-base-300 bg-base-100 p-2 text-sm shadow-xl"
+      >
         <button
           type="button"
-          class="inline-flex size-9 items-center justify-center rounded-lg border border-base-300 hover:bg-base-200"
-          aria-label="Organization actions"
+          role="menuitem"
+          class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
         >
-          <.icon name="hero-ellipsis-horizontal" class="size-5" />
+          <.icon name="hero-eye" class="size-4" />
+          <span>View</span>
         </button>
-      </:trigger>
-      <.dropdown_content padding="extra_small" rounded="large">
-        <.list size="small">
-          <:item icon="hero-eye">View</:item>
-          <:item icon="hero-pencil-square">Edit</:item>
-          <:item icon="hero-no-symbol">Suspend</:item>
-        </.list>
-      </.dropdown_content>
-    </.dropdown>
+        <button
+          type="button"
+          role="menuitem"
+          class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-pencil-square" class="size-4" />
+          <span>Edit</span>
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+        >
+          <.icon name="hero-no-symbol" class="size-4" />
+          <span>Suspend</span>
+        </button>
+      </div>
+    </details>
     """
   end
 
