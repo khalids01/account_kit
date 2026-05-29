@@ -18,7 +18,7 @@ defmodule AccountkitWeb.Components.RangeField do
   **Documentation:** https://mishka.tools/chelekom/docs/forms/range-field
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a customizable `range_field`, which allows users to select a numeric value from a defined range.

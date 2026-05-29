@@ -21,7 +21,7 @@ defmodule AccountkitWeb.Components.Toast do
   use Phoenix.Component
   alias Phoenix.LiveView.JS
   use Gettext, backend: AccountkitWeb.Gettext
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `toast` component displays temporary notifications or messages, usually at the top

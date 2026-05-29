@@ -19,7 +19,7 @@ defmodule AccountkitWeb.Components.PasswordField do
   use Phoenix.Component
   alias Phoenix.LiveView.JS
   import Phoenix.LiveView.Utils, only: [random_id: 0]
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a customizable `password_field` with options for size, color, label, and validation errors.

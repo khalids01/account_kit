@@ -19,7 +19,7 @@ defmodule AccountkitWeb.Components.CheckboxField do
   use Phoenix.Component
   alias Phoenix.LiveView.Utils
   alias Phoenix.HTML.Form
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `checkbox_field` component is used to create customizable checkbox input elements with various

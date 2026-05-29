@@ -15,7 +15,7 @@ defmodule AccountkitWeb.Components.SearchField do
   **Documentation:** https://mishka.tools/chelekom/docs/forms/search-field
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a `search_field` component that allows users to input search queries.

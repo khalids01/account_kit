@@ -25,7 +25,7 @@ defmodule AccountkitWeb.Components.Carousel do
   use Phoenix.Component
   import AccountkitWeb.Components.Image, only: [image: 1]
   import Phoenix.LiveView.Utils, only: [random_id: 0]
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
   use Gettext, backend: AccountkitWeb.Gettext
 
   @doc """

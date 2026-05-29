@@ -6,9 +6,9 @@ defmodule AccountkitWeb.Components.MishkaComponents do
       import AccountkitWeb.Components.Alert,
         only: [flash: 1, alert: 1, show_alert: 1, show_alert: 2, hide_alert: 1, hide_alert: 2]
 
-      import AccountkitWeb.Components.Avatar, only: [avatar: 1, avatar_group: 1]
+      import AccountkitWeb.Components.UI.Avatar, only: [avatar: 1, avatar_group: 1]
 
-      import AccountkitWeb.Components.Badge,
+      import AccountkitWeb.Components.UI.Badge,
         only: [badge: 1, hide_badge: 1, hide_badge: 2, show_badge: 1, show_badge: 2]
 
       import AccountkitWeb.Components.Banner,
@@ -17,7 +17,7 @@ defmodule AccountkitWeb.Components.MishkaComponents do
       import AccountkitWeb.Components.Blockquote, only: [blockquote: 1]
       import AccountkitWeb.Components.Breadcrumb, only: [breadcrumb: 1]
 
-      import AccountkitWeb.Components.Button,
+      import AccountkitWeb.Components.UI.Button,
         only: [button_group: 1, button: 1, input_button: 1, button_link: 1, back: 1]
 
       import AccountkitWeb.Components.Card,
@@ -40,25 +40,25 @@ defmodule AccountkitWeb.Components.MishkaComponents do
       import AccountkitWeb.Components.DeviceMockup, only: [device_mockup: 1]
       import AccountkitWeb.Components.Divider, only: [divider: 1, hr: 1]
 
-      import AccountkitWeb.Components.Drawer,
+      import AccountkitWeb.Components.UI.Drawer,
         only: [drawer: 1, hide_drawer: 2, hide_drawer: 3, show_drawer: 2, show_drawer: 3]
 
-      import AccountkitWeb.Components.Dropdown,
+      import AccountkitWeb.Components.UI.Dropdown,
         only: [dropdown: 1, dropdown_trigger: 1, dropdown_content: 1]
 
       import AccountkitWeb.Components.EmailField, only: [email_field: 1]
       import AccountkitWeb.Components.Fieldset, only: [fieldset: 1]
       import AccountkitWeb.Components.FileField, only: [file_field: 1]
-      import AccountkitWeb.Components.Footer, only: [footer: 1, footer_section: 1]
+      import AccountkitWeb.Components.Sections.Footer, only: [footer: 1, footer_section: 1]
       import AccountkitWeb.Components.FormWrapper, only: [form_wrapper: 1, simple_form: 1]
 
       import AccountkitWeb.Components.Gallery,
         only: [gallery: 1, gallery_media: 1, filterable_gallery: 1]
 
-      import AccountkitWeb.Components.Icon, only: [icon: 1]
+      import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
       import AccountkitWeb.Components.Image, only: [image: 1]
       import AccountkitWeb.Components.Indicator, only: [indicator: 1]
-      import AccountkitWeb.Components.InputField, only: [input: 1, error: 1]
+      import AccountkitWeb.Components.UI.Input, only: [input: 1, error: 1]
       import AccountkitWeb.Components.Jumbotron, only: [jumbotron: 1]
       import AccountkitWeb.Components.Keyboard, only: [keyboard: 1]
       import AccountkitWeb.Components.Layout, only: [flex: 1, grid: 1]
@@ -66,7 +66,7 @@ defmodule AccountkitWeb.Components.MishkaComponents do
       import AccountkitWeb.Components.MegaMenu, only: [mega_menu: 1]
       import AccountkitWeb.Components.Menu, only: [menu: 1]
 
-      import AccountkitWeb.Components.Modal,
+      import AccountkitWeb.Components.UI.Modal,
         only: [
           modal: 1,
           show_modal: 1,
@@ -79,7 +79,7 @@ defmodule AccountkitWeb.Components.MishkaComponents do
           hide: 2
         ]
 
-      import AccountkitWeb.Components.NativeSelect,
+      import AccountkitWeb.Components.UI.NativeSelect,
         only: [native_select: 1, select_option_group: 1]
 
       import AccountkitWeb.Components.Navbar, only: [navbar: 1, header: 1]
@@ -106,12 +106,12 @@ defmodule AccountkitWeb.Components.MishkaComponents do
       import AccountkitWeb.Components.SpeedDial, only: [speed_dial: 1]
       import AccountkitWeb.Components.Spinner, only: [spinner: 1]
       import AccountkitWeb.Components.Stepper, only: [stepper: 1, stepper_section: 1]
-      import AccountkitWeb.Components.Table, only: [table: 1, th: 1, tr: 1, td: 1]
+      import AccountkitWeb.Components.UI.Table, only: [table: 1, th: 1, tr: 1, td: 1]
 
-      import AccountkitWeb.Components.TableContent,
+      import AccountkitWeb.Components.UI.TableContent,
         only: [table_content: 1, content_wrapper: 1, content_item: 1]
 
-      import AccountkitWeb.Components.Tabs,
+      import AccountkitWeb.Components.UI.Tabs,
         only: [tabs: 1, show_tab: 2, show_tab: 3, hide_tab: 2, hide_tab: 3]
 
       import AccountkitWeb.Components.TelField, only: [tel_field: 1]

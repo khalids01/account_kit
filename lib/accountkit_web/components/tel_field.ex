@@ -23,7 +23,7 @@ defmodule AccountkitWeb.Components.TelField do
   **Documentation:** https://mishka.tools/chelekom/docs/forms/tel-field
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `tel_field` component is a customizable telephone input field with support for various

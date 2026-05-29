@@ -16,7 +16,7 @@ defmodule AccountkitWeb.Components.Divider do
   **Documentation:** https://mishka.tools/chelekom/docs/divider
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `divider` component is used to visually separate content with either a horizontal or

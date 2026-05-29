@@ -1,7 +1,7 @@
-defmodule AccountkitWeb.Auth.LoginFormTest do
+defmodule AccountkitWeb.Features.Auth.LoginFormTest do
   use ExUnit.Case, async: true
 
-  alias AccountkitWeb.Auth.LoginForm
+  alias AccountkitWeb.Features.Auth.LoginForm
 
   test "valid email passes" do
     changeset = LoginForm.changeset(%{"email" => "user@example.com"})

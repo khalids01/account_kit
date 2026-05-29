@@ -16,7 +16,7 @@ defmodule AccountkitWeb.Components.Breadcrumb do
   **Documentation:** https://mishka.tools/chelekom/docs/breadcrumb
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `breadcrumb` component is used to display a navigational path with customizable

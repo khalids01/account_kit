@@ -32,7 +32,7 @@ defmodule AccountkitWeb.Components.SpeedDial do
   use Phoenix.Component
   use Gettext, backend: AccountkitWeb.Gettext
   alias Phoenix.LiveView.JS
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a customizable `speed_dial` component that provides quick access to multiple actions.

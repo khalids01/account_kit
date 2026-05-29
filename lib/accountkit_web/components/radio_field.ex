@@ -18,7 +18,7 @@ defmodule AccountkitWeb.Components.RadioField do
   """
   use Phoenix.Component
   alias Phoenix.HTML.Form
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a `radio_field` component. This component allows users to select a single option from

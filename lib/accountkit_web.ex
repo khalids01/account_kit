@@ -82,8 +82,10 @@ defmodule AccountkitWeb do
       # Translation
       use Gettext, backend: AccountkitWeb.Gettext
 
-      import AccountkitWeb.Components.UIComponents
-      import AccountkitWeb.Sections.Headers
+      import AccountkitWeb.Components.Core.Logo
+      import AccountkitWeb.Components.Core.ThemeToggle
+      import AccountkitWeb.Components.Core.UserMenu
+      import AccountkitWeb.Components.Sections.HomeHeader
 
       # HTML escaping functionality
       import Phoenix.HTML
@@ -93,7 +95,6 @@ defmodule AccountkitWeb do
       # Common modules used in templates
       alias Phoenix.LiveView.JS
       alias AccountkitWeb.Layouts
-
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())

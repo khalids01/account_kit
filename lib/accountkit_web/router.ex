@@ -36,8 +36,8 @@ defmodule AccountkitWeb.Router do
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},
         {AccountkitWeb.LiveUserAuth, :live_no_user}
       ] do
-      live "/login", Auth.LoginLive, :new
-      live "/register", Auth.RegisterLive, :new
+      live "/login", Pages.Auth.LoginLive, :new
+      live "/register", Pages.Auth.RegisterLive, :new
 
       # in each liveview, add one of the following at the top of the module:
       #
@@ -66,7 +66,7 @@ defmodule AccountkitWeb.Router do
   scope "/", AccountkitWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", Pages.HomeController, :home
     get "/sign-in", AuthController, :redirect_to_login
     auth_routes AuthController, Accountkit.Accounts.User, path: "/auth"
     sign_out_route AuthController
@@ -120,8 +120,8 @@ defmodule AccountkitWeb.Router do
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},
         {AccountkitWeb.LiveUserAuth, :live_user_required}
       ] do
-      live "/profile", ProfileLive, :show
-      live "/onboarding/organization", Onboarding.OrganizationLive, :new
+      live "/profile", Pages.ProfileLive, :show
+      live "/onboarding/organization", Pages.Onboarding.OrganizationLive, :new
     end
 
     ash_authentication_live_session :dashboard_routes,
@@ -129,8 +129,8 @@ defmodule AccountkitWeb.Router do
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},
         {AccountkitWeb.LiveUserAuth, :dashboard_user_required}
       ] do
-      live "/dashboard", DashboardLive, :show
-      live "/dashboard/organizations", Dashboard.OrganizationsLive, :index
+      live "/dashboard", Pages.DashboardLive, :show
+      live "/dashboard/organizations", Pages.Dashboard.OrganizationsLive, :index
     end
 
     ash_authentication_live_session :admin_routes,
@@ -138,7 +138,7 @@ defmodule AccountkitWeb.Router do
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},
         {AccountkitWeb.LiveUserAuth, :dashboard_user_required}
       ] do
-      live "/admin/rate-limits", Admin.RateLimitsLive, :index
+      live "/admin/rate-limits", Pages.Admin.RateLimitsLive, :index
     end
   end
 

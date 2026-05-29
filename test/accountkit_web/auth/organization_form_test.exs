@@ -1,7 +1,7 @@
-defmodule AccountkitWeb.Auth.OrganizationFormTest do
+defmodule AccountkitWeb.Features.Auth.OrganizationFormTest do
   use ExUnit.Case, async: true
 
-  alias AccountkitWeb.Auth.OrganizationForm
+  alias AccountkitWeb.Features.Auth.OrganizationForm
 
   test "valid params pass" do
     changeset =

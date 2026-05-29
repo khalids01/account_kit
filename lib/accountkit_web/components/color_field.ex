@@ -15,7 +15,7 @@ defmodule AccountkitWeb.Components.ColorField do
   """
 
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `color_field` component is used to create a customizable color input field with various

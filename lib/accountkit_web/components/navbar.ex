@@ -16,7 +16,7 @@ defmodule AccountkitWeb.Components.Navbar do
   **Documentation:** https://mishka.tools/chelekom/docs/navbar
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
   use Gettext, backend: AccountkitWeb.Gettext
 
   @doc """

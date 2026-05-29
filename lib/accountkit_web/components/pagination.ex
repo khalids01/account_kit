@@ -20,7 +20,7 @@ defmodule AccountkitWeb.Components.Pagination do
 
   use Phoenix.Component
   alias Phoenix.LiveView.JS
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
   use Gettext, backend: AccountkitWeb.Gettext
 
   @doc """

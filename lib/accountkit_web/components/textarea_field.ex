@@ -25,7 +25,7 @@ defmodule AccountkitWeb.Components.TextareaField do
   """
 
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `textarea_field` component provides a customizable text area input with various styling options,

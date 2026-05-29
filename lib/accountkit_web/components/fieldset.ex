@@ -16,7 +16,7 @@ defmodule AccountkitWeb.Components.Fieldset do
   **Documentation:** https://mishka.tools/chelekom/docs/forms/fieldset
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a `fieldset` component that groups related form elements visually and semantically.

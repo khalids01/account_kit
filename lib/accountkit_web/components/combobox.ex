@@ -20,7 +20,7 @@ defmodule AccountkitWeb.Components.Combobox do
   use Gettext, backend: AccountkitWeb.Gettext
   import AccountkitWeb.Components.ScrollArea, only: [scroll_area: 1]
   import Phoenix.LiveView.Utils, only: [random_id: 0]
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `combobox` component is a customizable select/dropdown element with advanced features

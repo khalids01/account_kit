@@ -18,7 +18,7 @@ defmodule AccountkitWeb.Components.Menu do
   **Documentation:** https://mishka.tools/chelekom/docs/menu
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Button, only: [button_link: 1]
+  import AccountkitWeb.Components.UI.Button, only: [button_link: 1]
   import AccountkitWeb.Components.Collapse, only: [collapse: 1]
 
   @doc """

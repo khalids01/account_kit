@@ -18,7 +18,7 @@ defmodule AccountkitWeb.Components.EmailField do
   """
 
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a customizable `email_field` with options for styling, floating labels, and additional

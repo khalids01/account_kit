@@ -14,7 +14,7 @@ defmodule AccountkitWeb.Components.NumberField do
   """
 
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a customizable `number_input` field with various options such as labels, descriptions,

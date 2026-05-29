@@ -24,7 +24,7 @@ defmodule AccountkitWeb.Components.FileField do
   use Phoenix.Component
   import AccountkitWeb.Components.Progress, only: [progress: 1]
   import AccountkitWeb.Components.Spinner, only: [spinner: 1]
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
   use Gettext, backend: AccountkitWeb.Gettext
 
   @doc """

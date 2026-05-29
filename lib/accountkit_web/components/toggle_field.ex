@@ -14,7 +14,7 @@ defmodule AccountkitWeb.Components.ToggleField do
   """
   use Phoenix.Component
   alias Phoenix.HTML.Form
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `toggle_field` component is a customizable toggle switch input, often used for binary on/off

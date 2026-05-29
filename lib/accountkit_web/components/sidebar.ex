@@ -19,7 +19,7 @@ defmodule AccountkitWeb.Components.Sidebar do
   use Phoenix.Component
   use Gettext, backend: AccountkitWeb.Gettext
   alias Phoenix.LiveView.JS
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
   import Phoenix.LiveView.Utils, only: [random_id: 0]
 
   @doc """

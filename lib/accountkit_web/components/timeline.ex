@@ -28,7 +28,7 @@ defmodule AccountkitWeb.Components.Timeline do
   """
 
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `timeline` component provides a structured layout to display a sequence of events or actions,

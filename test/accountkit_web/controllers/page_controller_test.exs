@@ -1,4 +1,4 @@
-defmodule AccountkitWeb.PageControllerTest do
+defmodule AccountkitWeb.Pages.HomeControllerTest do
   use AccountkitWeb.ConnCase
 
   test "GET /", %{conn: conn} do

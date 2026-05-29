@@ -30,7 +30,7 @@ defmodule AccountkitWeb.Components.Alert do
   use Phoenix.Component
   use Gettext, backend: AccountkitWeb.Gettext
   alias Phoenix.LiveView.JS
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
   import Phoenix.LiveView.Utils, only: [random_id: 0]
 
   @doc type: :component
@@ -55,6 +55,7 @@ defmodule AccountkitWeb.Components.Alert do
   attr :id, :string, doc: "A unique identifier is used to manage state and interaction"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil, doc: "Specifies the title of the element"
+
   attr :kind, :atom,
     values: [:info, :error, :warning, :natural, :success, :danger],
     default: :natural,
@@ -104,7 +105,11 @@ defmodule AccountkitWeb.Components.Alert do
     assigns =
       assigns
       |> assign_new(:id, fn -> "flash-#{assigns.variant}-#{assigns.kind}" end)
-      |> assign(:icon, assigns[:icon] || flash_icon(assigns.kind, assigns.variant) || "hero-chat-bubble-bottom-center-text")
+      |> assign(
+        :icon,
+        assigns[:icon] || flash_icon(assigns.kind, assigns.variant) ||
+          "hero-chat-bubble-bottom-center-text"
+      )
 
     ~H"""
     <div
@@ -833,8 +838,7 @@ defmodule AccountkitWeb.Components.Alert do
       to: selector,
       time: 300,
       transition:
-        {"transition-all transform ease-out duration-300",
-         "opacity-0 -translate-y-2 scale-95",
+        {"transition-all transform ease-out duration-300", "opacity-0 -translate-y-2 scale-95",
          "opacity-100 translate-y-0 scale-100"}
     )
   end
@@ -873,8 +877,7 @@ defmodule AccountkitWeb.Components.Alert do
       to: selector,
       time: 200,
       transition:
-        {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 scale-100",
+        {"transition-all transform ease-in duration-200", "opacity-100 translate-y-0 scale-100",
          "opacity-0 -translate-y-2 scale-95"}
     )
   end

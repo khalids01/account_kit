@@ -1,7 +1,7 @@
-defmodule AccountkitWeb.Auth.RegisterFormTest do
+defmodule AccountkitWeb.Features.Auth.RegisterFormTest do
   use ExUnit.Case, async: true
 
-  alias AccountkitWeb.Auth.RegisterForm
+  alias AccountkitWeb.Features.Auth.RegisterForm
 
   test "valid params pass" do
     changeset = RegisterForm.changeset(%{"name" => "Khalid", "email" => "user@example.com"})

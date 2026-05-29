@@ -10,7 +10,7 @@ defmodule AccountkitWeb.Components.Accordion do
   """
   use Phoenix.Component
   import Phoenix.LiveView.Utils, only: [random_id: 0]
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc type: :component
   attr :id, :string,

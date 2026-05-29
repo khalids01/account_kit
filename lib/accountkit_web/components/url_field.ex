@@ -16,7 +16,7 @@ defmodule AccountkitWeb.Components.UrlField do
   **Documentation:** https://mishka.tools/chelekom/docs/forms/url-field
   """
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   The `url_field` component is used to create an input field for URLs.

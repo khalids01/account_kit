@@ -22,7 +22,7 @@ defmodule AccountkitWeb.Components.MegaMenu do
 
   use Phoenix.Component
   alias Phoenix.LiveView.JS
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a customizable `mega_menu` component that can display various sections of content.

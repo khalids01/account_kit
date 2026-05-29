@@ -31,7 +31,7 @@ defmodule AccountkitWeb.Components.Banner do
   use Phoenix.Component
   alias Phoenix.LiveView.JS
   use Gettext, backend: AccountkitWeb.Gettext
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @positions ["top_left", "top_right", "bottom_left", "bottom_right", "center", "full"]
 

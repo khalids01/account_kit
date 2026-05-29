@@ -23,7 +23,7 @@ defmodule AccountkitWeb.Components.List do
   """
 
   use Phoenix.Component
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc """
   Renders a `list` component that supports both ordered and unordered lists with customizable styles,

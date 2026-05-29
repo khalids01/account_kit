@@ -33,7 +33,7 @@ defmodule AccountkitWeb.Components.CheckboxCard do
   """
   use Phoenix.Component
   alias Phoenix.HTML.Form
-  import AccountkitWeb.Components.Icon, only: [icon: 1]
+  import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   @doc type: :component
   attr :id, :string,
