@@ -12,7 +12,9 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
     assert redirected_to(conn) == ~p"/login"
   end
 
-  test "signed-in users without a scoped role are redirected from control-plane routes", %{conn: conn} do
+  test "signed-in users without a scoped role are redirected from control-plane routes", %{
+    conn: conn
+  } do
     user = user!("plain@example.com")
 
     conn =
@@ -113,6 +115,58 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
 
     assert {:error, {:live_redirect, %{to: "/dashboard"}}} =
              live(conn, ~p"/dashboard/organizations")
+  end
+
+  test "platform owners can access users page", %{conn: conn} do
+    owner = user!("platform-users@example.com", "Platform User")
+    org_admin = user!("admin-users@example.com", "Admin User")
+    plain_user = user!("end-user@example.com", "End User")
+
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    organization =
+      Ash.Seed.seed!(Organization, %{name: "Umbrella", text_logo: "Umbrella"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: organization.id,
+      user_id: org_admin.id,
+      role: :org_admin
+    })
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, _view, html} = live(conn, ~p"/dashboard/users")
+
+    assert html =~ "Platform User"
+    assert html =~ "Platform owner"
+    assert html =~ "Admin User"
+    assert html =~ "Org admin"
+    assert html =~ "Umbrella"
+    assert html =~ "Ban user"
+    assert html =~ "Archive user"
+    refute html =~ plain_user.email
+  end
+
+  test "org admins are redirected from users page", %{conn: conn} do
+    user = user!("org-users-only@example.com")
+    organization = Ash.Seed.seed!(Organization, %{name: "Initrode", text_logo: "Initrode"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: organization.id,
+      user_id: user.id,
+      role: :org_admin
+    })
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(user)
+
+    assert {:error, {:live_redirect, %{to: "/dashboard"}}} =
+             live(conn, ~p"/dashboard/users")
   end
 
   defp user!(email, name \\ "Test User") do

@@ -69,7 +69,7 @@ defmodule AccountkitWeb.Components.Sections.DashboardShell do
             <.dashboard_nav_item
               icon="hero-users"
               label="Users"
-              href="#"
+              href={~p"/dashboard/users"}
               collapsed?={@sidebar_collapsed?}
               active={@active_nav == :users}
             />
