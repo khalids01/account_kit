@@ -6,22 +6,30 @@ defmodule AccountkitWeb.AuthController do
 
   def success(conn, activity, user, _token) do
     return_to = get_session(conn, :return_to)
-    PlatformOwnerBootstrap.grant_if_configured_user(user)
 
-    message =
-      case activity do
-        {:confirm_new_user, :confirm} -> "Your email address has now been confirmed"
-        {:password, :reset} -> "Your password has successfully been reset"
-        _ -> "You are now signed in"
-      end
+    if Authorization.banned?(user) do
+      conn
+      |> delete_session(:return_to)
+      |> put_flash(:error, "This account has been banned. Contact the platform owner for access.")
+      |> redirect(to: ~p"/login")
+    else
+      PlatformOwnerBootstrap.grant_if_configured_user(user)
 
-    conn
-    |> delete_session(:return_to)
-    |> store_in_session(user)
-    # If your resource has a different name, update the assign name here (i.e :current_admin)
-    |> assign(:current_user, user)
-    |> put_flash(:info, message)
-    |> redirect(to: signed_in_path(return_to, user))
+      message =
+        case activity do
+          {:confirm_new_user, :confirm} -> "Your email address has now been confirmed"
+          {:password, :reset} -> "Your password has successfully been reset"
+          _ -> "You are now signed in"
+        end
+
+      conn
+      |> delete_session(:return_to)
+      |> store_in_session(user)
+      # If your resource has a different name, update the assign name here (i.e :current_admin)
+      |> assign(:current_user, user)
+      |> put_flash(:info, message)
+      |> redirect(to: signed_in_path(return_to, user))
+    end
   end
 
   def failure(conn, activity, reason) do

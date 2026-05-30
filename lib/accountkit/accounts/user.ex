@@ -204,6 +204,11 @@ defmodule Accountkit.Accounts.User do
       get_by :email
     end
 
+    read :get_by_id do
+      description "Looks up a user by id"
+      get_by :id
+    end
+
     update :reset_password_with_token do
       argument :reset_token, :string do
         allow_nil? false
@@ -307,6 +312,34 @@ defmodule Accountkit.Accounts.User do
       argument :api_key, :string, allow_nil?: false
       prepare AshAuthentication.Strategy.ApiKey.SignInPreparation
     end
+
+    update :ban do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :banned_at, DateTime.utc_now())
+      end
+    end
+
+    update :unban do
+      accept []
+      change set_attribute(:banned_at, nil)
+    end
+
+    update :archive do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :archived_at, DateTime.utc_now())
+      end
+    end
+
+    update :restore do
+      accept []
+      change set_attribute(:archived_at, nil)
+    end
   end
 
   policies do
@@ -316,6 +349,15 @@ defmodule Accountkit.Accounts.User do
 
     policy action_type(:read) do
       authorize_if expr(id == ^actor(:id))
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+    end
+
+    policy action([:ban, :archive]) do
+      forbid_if expr(id == ^actor(:id))
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+    end
+
+    policy action([:unban, :restore]) do
       authorize_if Accountkit.Accounts.Checks.PlatformOwner
     end
   end
@@ -337,6 +379,14 @@ defmodule Accountkit.Accounts.User do
     end
 
     attribute :confirmed_at, :utc_datetime_usec
+
+    attribute :banned_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :archived_at, :utc_datetime_usec do
+      public? true
+    end
   end
 
   relationships do

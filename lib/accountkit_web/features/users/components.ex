@@ -4,6 +4,8 @@ defmodule AccountkitWeb.Features.Users.Components do
   import AccountkitWeb.Components.UI.Icon, only: [icon: 1]
 
   attr :users, :list, required: true
+  attr :current_user_id, :string, required: true
+  attr :archived?, :boolean, default: false
 
   def users_table(assigns) do
     ~H"""
@@ -26,11 +28,19 @@ defmodule AccountkitWeb.Features.Users.Components do
             </td>
             <td class="px-4 py-3 text-base-content/70">{organizations_label(user.organizations)}</td>
             <td class="px-4 py-3">
-              <.role_badge role={user.role} />
+              <div class="flex flex-wrap items-center gap-1.5">
+                <.role_badge role={user.role} />
+                <.status_badges user={user} />
+              </div>
             </td>
             <td class="px-4 py-3 text-base-content/70">{format_datetime(user.created_at)}</td>
             <td class="relative px-4 py-3 text-right">
-              <.user_actions_menu id={"user-actions-#{user.user.id}"} />
+              <.user_actions_menu
+                id={"user-actions-#{user.user.id}"}
+                user={user}
+                current_user_id={@current_user_id}
+                archived?={@archived?}
+              />
             </td>
           </tr>
         </tbody>
@@ -40,6 +50,8 @@ defmodule AccountkitWeb.Features.Users.Components do
   end
 
   attr :users, :list, required: true
+  attr :current_user_id, :string, required: true
+  attr :archived?, :boolean, default: false
 
   def users_cards(assigns) do
     ~H"""
@@ -54,11 +66,17 @@ defmodule AccountkitWeb.Features.Users.Components do
             <h3 class="truncate font-semibold">{user.name}</h3>
             <p class="mt-1 truncate text-sm text-base-content/70">{user.email}</p>
           </div>
-          <.user_actions_menu id={"user-actions-mobile-#{user.user.id}"} />
+          <.user_actions_menu
+            id={"user-actions-mobile-#{user.user.id}"}
+            user={user}
+            current_user_id={@current_user_id}
+            archived?={@archived?}
+          />
         </div>
 
-        <div class="mt-4">
+        <div class="mt-4 flex flex-wrap items-center gap-1.5">
           <.role_badge role={user.role} />
+          <.status_badges user={user} />
         </div>
 
         <dl class="mt-4 space-y-3 text-sm">
@@ -73,6 +91,25 @@ defmodule AccountkitWeb.Features.Users.Components do
         </dl>
       </article>
     </div>
+    """
+  end
+
+  attr :user, :map, required: true
+
+  defp status_badges(assigns) do
+    ~H"""
+    <span
+      :if={banned?(@user)}
+      class="inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-200"
+    >
+      Banned
+    </span>
+    <span
+      :if={archived?(@user)}
+      class="inline-flex items-center rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:border-zinc-500/50 dark:bg-zinc-500/10 dark:text-zinc-200"
+    >
+      Archived
+    </span>
     """
   end
 
@@ -96,8 +133,13 @@ defmodule AccountkitWeb.Features.Users.Components do
   end
 
   attr :id, :string, required: true
+  attr :user, :map, required: true
+  attr :current_user_id, :string, required: true
+  attr :archived?, :boolean, required: true
 
   defp user_actions_menu(assigns) do
+    assigns = assign(assigns, :self?, assigns.user.user.id == assigns.current_user_id)
+
     ~H"""
     <details id={@id} data-user-menu class="group relative">
       <summary
@@ -117,27 +159,53 @@ defmodule AccountkitWeb.Features.Users.Components do
         <button
           type="button"
           role="menuitem"
-          class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+          disabled={@self?}
+          phx-click={if banned?(@user), do: "unban_user", else: "ban_user"}
+          phx-value-id={@user.user.id}
+          class={[
+            "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content",
+            @self? && "cursor-not-allowed opacity-50 hover:bg-transparent"
+          ]}
         >
           <span class="flex items-center gap-2">
             <.icon name="hero-no-symbol" class="size-4" />
-            <span>Ban user</span>
+            <span>{if banned?(@user), do: "Unban user", else: "Ban user"}</span>
           </span>
-          <span class="h-5 w-9 rounded-full bg-base-300 p-0.5">
-            <span class="block size-4 rounded-full bg-base-100 shadow-sm" />
+          <span class={[
+            "h-5 w-9 rounded-full p-0.5 transition",
+            banned?(@user) && "bg-rose-500",
+            !banned?(@user) && "bg-base-300"
+          ]}>
+            <span class={[
+              "block size-4 rounded-full bg-base-100 shadow-sm transition",
+              banned?(@user) && "translate-x-4"
+            ]} />
           </span>
         </button>
         <button
           type="button"
           role="menuitem"
-          class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+          disabled={@self?}
+          phx-click={if @archived?, do: "restore_user", else: "archive_user"}
+          phx-value-id={@user.user.id}
+          class={[
+            "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content",
+            @self? && "cursor-not-allowed opacity-50 hover:bg-transparent"
+          ]}
         >
           <span class="flex items-center gap-2">
             <.icon name="hero-archive-box" class="size-4" />
-            <span>Archive user</span>
+            <span>{if @archived?, do: "Restore user", else: "Archive user"}</span>
           </span>
-          <span class="h-5 w-9 rounded-full bg-base-300 p-0.5">
-            <span class="block size-4 rounded-full bg-base-100 shadow-sm" />
+          <span class={[
+            "h-5 w-9 rounded-full p-0.5 transition",
+            @archived? && "bg-zinc-500",
+            !@archived? && "bg-base-300"
+          ]}>
+            <span class={[
+              "block size-4 rounded-full bg-base-100 shadow-sm transition",
+              @archived? && "translate-x-4"
+            ]} />
           </span>
         </button>
       </div>
@@ -158,4 +226,10 @@ defmodule AccountkitWeb.Features.Users.Components do
   defp format_datetime(%DateTime{} = datetime) do
     Calendar.strftime(datetime, "%b %-d, %Y")
   end
+
+  defp banned?(%{banned_at: %DateTime{}}), do: true
+  defp banned?(_user), do: false
+
+  defp archived?(%{archived_at: %DateTime{}}), do: true
+  defp archived?(_user), do: false
 end

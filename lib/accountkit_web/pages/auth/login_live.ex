@@ -70,6 +70,7 @@ defmodule AccountkitWeb.Pages.Auth.LoginLive do
   def handle_event("submit", %{"login" => params}, socket) do
     changeset = LoginForm.changeset(params, action: :submit)
     ip = RemoteIp.from_socket(socket)
+    user_result = if changeset.valid?, do: get_user(changeset), else: {:ok, nil}
 
     cond do
       not changeset.valid? ->
@@ -84,7 +85,15 @@ defmodule AccountkitWeb.Pages.Auth.LoginLive do
       ) ->
         {:noreply, put_flash(socket, :error, "Too many attempts. Please wait and try again.")}
 
-      user_exists?(changeset) ->
+      banned_user_result?(user_result) ->
+        message = "This account has been banned. Contact the platform owner for access."
+
+        {:noreply,
+         socket
+         |> put_flash(:error, message)
+         |> assign_form(Ecto.Changeset.add_error(changeset, :email, message))}
+
+      user_found?(user_result) ->
         case request_magic_link(changeset) do
           :ok ->
             {:noreply,
@@ -122,13 +131,10 @@ defmodule AccountkitWeb.Pages.Auth.LoginLive do
     assign_form(socket, LoginForm.changeset(params, action: action))
   end
 
-  defp user_exists?(%Ecto.Changeset{} = changeset) do
+  defp get_user(%Ecto.Changeset{} = changeset) do
     email = Ecto.Changeset.get_field(changeset, :email)
 
-    case get_user(email) do
-      {:ok, %User{}} -> true
-      _ -> false
-    end
+    get_user(email)
   end
 
   defp get_user(email) do
@@ -136,6 +142,15 @@ defmodule AccountkitWeb.Pages.Auth.LoginLive do
     |> Ash.Query.for_read(:get_by_email, %{email: email}, authorize?: false)
     |> Ash.read_one()
   end
+
+  defp banned_user?(%User{banned_at: %DateTime{}}), do: true
+  defp banned_user?(_user), do: false
+
+  defp banned_user_result?({:ok, user}), do: banned_user?(user)
+  defp banned_user_result?(_result), do: false
+
+  defp user_found?({:ok, %User{}}), do: true
+  defp user_found?(_result), do: false
 
   defp request_magic_link(%Ecto.Changeset{} = changeset) do
     email = Ecto.Changeset.get_field(changeset, :email)

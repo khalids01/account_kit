@@ -150,6 +150,87 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
     refute html =~ plain_user.email
   end
 
+  test "platform owners can ban and unban users from users page", %{conn: conn} do
+    owner = user!("platform-ban-ui@example.com", "Platform Ban User")
+    org_admin = user!("admin-ban-ui@example.com", "Admin Ban User")
+
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    organization =
+      Ash.Seed.seed!(Organization, %{name: "Ban UI Org", text_logo: "Ban UI Org"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: organization.id,
+      user_id: org_admin.id,
+      role: :org_admin
+    })
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, _html} = live(conn, ~p"/dashboard/users")
+
+    html =
+      view
+      |> element("button[phx-click='ban_user'][phx-value-id='#{org_admin.id}']")
+      |> render_click()
+
+    assert html =~ "User banned."
+    assert html =~ "Banned"
+    assert html =~ "Unban user"
+
+    html =
+      view
+      |> element("button[phx-click='unban_user'][phx-value-id='#{org_admin.id}']")
+      |> render_click()
+
+    assert html =~ "User unbanned."
+    refute html =~ "Banned"
+    assert html =~ "Ban user"
+  end
+
+  test "platform owners can archive and restore users from users page", %{conn: conn} do
+    owner = user!("platform-archive-ui@example.com", "Platform Archive User")
+    org_admin = user!("admin-archive-ui@example.com", "Admin Archive User")
+
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    organization =
+      Ash.Seed.seed!(Organization, %{name: "Archive UI Org", text_logo: "Archive UI Org"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: organization.id,
+      user_id: org_admin.id,
+      role: :org_admin
+    })
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, _html} = live(conn, ~p"/dashboard/users")
+
+    html =
+      view
+      |> element("button[phx-click='archive_user'][phx-value-id='#{org_admin.id}']")
+      |> render_click()
+
+    assert html =~ "User archived."
+    assert html =~ "Restore user"
+
+    html =
+      view
+      |> element("button[phx-click='restore_user'][phx-value-id='#{org_admin.id}']")
+      |> render_click()
+
+    assert html =~ "User restored."
+    refute html =~ "Restore user"
+    assert html =~ "Archive user"
+  end
+
   test "org admins are redirected from users page", %{conn: conn} do
     user = user!("org-users-only@example.com")
     organization = Ash.Seed.seed!(Organization, %{name: "Initrode", text_logo: "Initrode"})

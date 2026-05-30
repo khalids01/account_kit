@@ -1,7 +1,8 @@
 defmodule AccountkitWeb.Features.Users.Queries do
   alias Accountkit.Accounts.{OrganizationMembership, PlatformRole}
 
-  def dashboard_users_for_platform(user) do
+  def dashboard_users_for_platform(user, opts \\ []) do
+    archived? = Keyword.get(opts, :archived?, false)
     platform_roles = platform_roles_for_platform(user)
     org_admin_memberships = org_admin_memberships_for_platform(user)
 
@@ -16,6 +17,7 @@ defmodule AccountkitWeb.Features.Users.Queries do
     (platform_rows ++ org_admin_rows)
     |> Enum.group_by(& &1.user.id)
     |> Enum.map(fn {_user_id, rows} -> merge_rows(rows) end)
+    |> Enum.filter(&(archived? == archived?(&1)))
     |> Enum.sort_by(&String.downcase(to_string(&1.email)))
   end
 
@@ -40,7 +42,9 @@ defmodule AccountkitWeb.Features.Users.Queries do
       email: user_email(user),
       role: :platform_owner,
       organizations: [],
-      created_at: created_at
+      created_at: created_at,
+      banned_at: user.banned_at,
+      archived_at: user.archived_at
     }
   end
 
@@ -51,7 +55,9 @@ defmodule AccountkitWeb.Features.Users.Queries do
       email: user_email(user),
       role: :org_admin,
       organizations: [organization],
-      created_at: created_at
+      created_at: created_at,
+      banned_at: user.banned_at,
+      archived_at: user.archived_at
     }
   end
 
@@ -70,9 +76,14 @@ defmodule AccountkitWeb.Features.Users.Queries do
       base_row
       | role: if(platform_row, do: :platform_owner, else: :org_admin),
         organizations: organizations,
-        created_at: base_row.created_at
+        created_at: base_row.created_at,
+        banned_at: base_row.banned_at,
+        archived_at: base_row.archived_at
     }
   end
+
+  defp archived?(%{archived_at: %DateTime{}}), do: true
+  defp archived?(_row), do: false
 
   defp display_name(%{name: name}) when is_binary(name) and name != "", do: name
   defp display_name(user), do: user_email(user)

@@ -6,7 +6,7 @@ defmodule Accountkit.Accounts.Authorization do
   relying on a global role field on the user.
   """
 
-  alias Accountkit.Accounts.{OrganizationMembership, PlatformRole}
+  alias Accountkit.Accounts.{OrganizationMembership, PlatformRole, User}
 
   def platform_owner?(%{id: user_id}) when not is_nil(user_id) do
     PlatformRole
@@ -36,6 +36,18 @@ defmodule Accountkit.Accounts.Authorization do
   end
 
   def dashboard_user?(_user), do: false
+
+  def banned?(%{id: user_id}) when not is_nil(user_id) do
+    User
+    |> Ash.Query.for_read(:get_by_id, %{id: user_id}, authorize?: false)
+    |> Ash.read_one()
+    |> case do
+      {:ok, %{banned_at: %DateTime{}}} -> true
+      _ -> false
+    end
+  end
+
+  def banned?(_user), do: false
 
   def onboarding_required?(%{id: user_id} = user) when not is_nil(user_id) do
     not dashboard_user?(user)

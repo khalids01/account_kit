@@ -24,10 +24,15 @@ defmodule AccountkitWeb.LiveUserAuth do
   end
 
   def on_mount(:live_user_required, _params, _session, socket) do
-    if socket.assigns[:current_user] do
-      {:cont, socket}
-    else
-      {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+    cond do
+      is_nil(socket.assigns[:current_user]) ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+
+      Authorization.banned?(socket.assigns.current_user) ->
+        {:halt, banned_redirect(socket)}
+
+      true ->
+        {:cont, socket}
     end
   end
 
@@ -35,6 +40,9 @@ defmodule AccountkitWeb.LiveUserAuth do
     cond do
       is_nil(socket.assigns[:current_user]) ->
         {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+
+      Authorization.banned?(socket.assigns.current_user) ->
+        {:halt, banned_redirect(socket)}
 
       Authorization.dashboard_user?(socket.assigns.current_user) ->
         {:cont, socket}
@@ -48,6 +56,9 @@ defmodule AccountkitWeb.LiveUserAuth do
     cond do
       is_nil(socket.assigns[:current_user]) ->
         {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
+
+      Authorization.banned?(socket.assigns.current_user) ->
+        {:halt, banned_redirect(socket)}
 
       Authorization.platform_owner?(socket.assigns.current_user) ->
         {:cont, socket}
@@ -65,10 +76,24 @@ defmodule AccountkitWeb.LiveUserAuth do
   end
 
   def on_mount(:live_no_user, _params, _session, socket) do
-    if socket.assigns[:current_user] do
-      {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
-    else
-      {:cont, assign(socket, :current_user, nil)}
+    cond do
+      is_nil(socket.assigns[:current_user]) ->
+        {:cont, assign(socket, :current_user, nil)}
+
+      Authorization.banned?(socket.assigns.current_user) ->
+        {:halt, banned_redirect(socket)}
+
+      true ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
     end
+  end
+
+  defp banned_redirect(socket) do
+    socket
+    |> Phoenix.LiveView.put_flash(
+      :error,
+      "This account has been banned. Contact the platform owner for access."
+    )
+    |> Phoenix.LiveView.redirect(to: ~p"/sign-out")
   end
 end
