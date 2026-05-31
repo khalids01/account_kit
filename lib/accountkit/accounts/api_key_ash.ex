@@ -13,6 +13,13 @@ defmodule Accountkit.Accounts.ApiKey do
   actions do
     defaults [:read, :destroy]
 
+    read :list_for_user do
+      argument :user_id, :uuid, allow_nil?: false
+
+      filter expr(user_id == ^arg(:user_id))
+      prepare build(sort: [expires_at: :asc])
+    end
+
     create :create do
       primary? true
       accept [:user_id, :expires_at]
@@ -25,6 +32,18 @@ defmodule Accountkit.Accounts.ApiKey do
   policies do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action(:create) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action_type(:destroy) do
+      authorize_if expr(user_id == ^actor(:id))
     end
   end
 

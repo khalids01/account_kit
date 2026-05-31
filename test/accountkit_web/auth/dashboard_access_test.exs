@@ -4,7 +4,8 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
   import AshAuthentication.Plug.Helpers
   import Phoenix.LiveViewTest
 
-  alias Accountkit.Accounts.{Organization, OrganizationMembership, PlatformRole, User}
+  alias Accountkit.Accounts.{ApiKey, Organization, OrganizationMembership, PlatformRole, User}
+  alias Accountkit.Settings.RateLimitPolicy
 
   test "anonymous users are redirected from control-plane routes", %{conn: conn} do
     conn = get(conn, ~p"/admin/rate-limits")
@@ -250,7 +251,140 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
              live(conn, ~p"/dashboard/users")
   end
 
+  test "platform owners can create and revoke their own API keys", %{conn: conn} do
+    owner = user!("platform-api-keys@example.com", "API Key Owner")
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, html} = live(conn, ~p"/dashboard/api-keys")
+
+    assert html =~ "API keys"
+    assert html =~ "No API keys yet."
+
+    expires_on =
+      Date.utc_today()
+      |> Date.add(7)
+      |> Date.to_iso8601()
+
+    html =
+      view
+      |> form("form[phx-submit='create_api_key']", %{api_key: %{expires_on: expires_on}})
+      |> render_submit()
+
+    assert html =~ "API key created."
+    assert html =~ "accountkit_"
+    assert html =~ "Copy it now"
+    assert html =~ "Valid"
+
+    [api_key] = api_keys_for_user(owner)
+
+    html =
+      view
+      |> element("button[phx-click='revoke_api_key'][phx-value-id='#{api_key.id}']")
+      |> render_click()
+
+    assert html =~ "API key revoked."
+    assert html =~ "No API keys yet."
+    assert api_keys_for_user(owner) == []
+  end
+
+  test "org admins are redirected from API keys page", %{conn: conn} do
+    user = user!("org-api-keys-only@example.com")
+    organization = Ash.Seed.seed!(Organization, %{name: "API Key Org", text_logo: "API Key Org"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: organization.id,
+      user_id: user.id,
+      role: :org_admin
+    })
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(user)
+
+    assert {:error, {:live_redirect, %{to: "/dashboard"}}} =
+             live(conn, ~p"/dashboard/api-keys")
+  end
+
+  test "platform owners can update rate limit settings", %{conn: conn} do
+    owner = user!("platform-settings@example.com", "Settings Owner")
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    policy = rate_limit_policy!("magic_link_sign_in_ip")
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, html} = live(conn, ~p"/dashboard/settings")
+
+    assert html =~ "Settings"
+    assert html =~ "Magic link sign in"
+    assert html =~ "magic_link_sign_in_ip"
+
+    html =
+      view
+      |> form("form[phx-value-id='#{policy.id}']", %{
+        policy: %{
+          limit: "9",
+          period_seconds: "120",
+          enabled: "true",
+          description: "Updated sign-in limit"
+        }
+      })
+      |> render_submit()
+
+    assert html =~ "Saved magic_link_sign_in_ip."
+
+    updated_policy = rate_limit_policy!("magic_link_sign_in_ip")
+
+    assert updated_policy.limit == 9
+    assert updated_policy.period_seconds == 120
+    assert updated_policy.enabled
+    assert updated_policy.description == "Updated sign-in limit"
+  end
+
+  test "org admins are redirected from settings page", %{conn: conn} do
+    user = user!("org-settings-only@example.com")
+
+    organization =
+      Ash.Seed.seed!(Organization, %{name: "Settings Org", text_logo: "Settings Org"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: organization.id,
+      user_id: user.id,
+      role: :org_admin
+    })
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(user)
+
+    assert {:error, {:live_redirect, %{to: "/dashboard"}}} =
+             live(conn, ~p"/dashboard/settings")
+  end
+
   defp user!(email, name \\ "Test User") do
     Ash.Seed.seed!(User, %{email: email, name: name})
+  end
+
+  defp api_keys_for_user(user) do
+    ApiKey
+    |> Ash.Query.for_read(:list_for_user, %{user_id: user.id})
+    |> Ash.read!(authorize?: false)
+  end
+
+  defp rate_limit_policy!(key) do
+    RateLimitPolicy
+    |> Ash.Query.for_read(:list_all, %{})
+    |> Ash.read!(authorize?: false)
+    |> Enum.find(&(&1.key == key))
   end
 end

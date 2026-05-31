@@ -132,6 +132,8 @@ defmodule AccountkitWeb.Router do
       live "/dashboard", Pages.DashboardLive, :show
       live "/dashboard/organizations", Pages.Dashboard.OrganizationsLive, :index
       live "/dashboard/users", Pages.Dashboard.UsersLive, :index
+      live "/dashboard/api-keys", Pages.Dashboard.ApiKeysLive, :index
+      live "/dashboard/settings", Pages.Dashboard.SettingsLive, :index
     end
 
     ash_authentication_live_session :admin_routes,

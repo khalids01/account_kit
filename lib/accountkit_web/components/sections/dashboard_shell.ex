@@ -76,14 +76,14 @@ defmodule AccountkitWeb.Components.Sections.DashboardShell do
             <.dashboard_nav_item
               icon="hero-key"
               label="API keys"
-              href="#"
+              href={~p"/dashboard/api-keys"}
               collapsed?={@sidebar_collapsed?}
               active={@active_nav == :api_keys}
             />
             <.dashboard_nav_item
               icon="hero-cog-6-tooth"
               label="Settings"
-              href="#"
+              href={~p"/dashboard/settings"}
               collapsed?={@sidebar_collapsed?}
               active={@active_nav == :settings}
             />
