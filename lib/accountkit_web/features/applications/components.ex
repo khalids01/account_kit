@@ -166,7 +166,7 @@ defmodule AccountkitWeb.Features.Applications.Components do
                 </section>
 
                 <section class="rounded-2xl border border-base-300 bg-base-100 p-4">
-                  <div class="grid gap-5 lg:grid-cols-2">
+                  <div class="space-y-5">
                     <.list_inputs
                       field_name="allowed_origins"
                       label="Allowed origins"
