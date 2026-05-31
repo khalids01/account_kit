@@ -3,29 +3,9 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
 
   alias Accountkit.Accounts.{Authorization, Organization, OrganizationMembership, SsoApplication}
   alias AccountkitWeb.Components.Sections.DashboardShell, as: DashboardLayout
+  alias AccountkitWeb.Features.Applications.{Components, Forms}
 
   require Ash.Query
-
-  @empty_form %{
-    "organization_id" => "",
-    "name" => "",
-    "logo_url" => "",
-    "allowed_origins" => "",
-    "redirect_urls" => "",
-    "email_from_name" => "",
-    "email_from_address" => "",
-    "password_enabled" => "true",
-    "magic_link_enabled" => "true",
-    "google_enabled" => "false",
-    "google_client_id" => "",
-    "google_client_secret" => "",
-    "facebook_enabled" => "false",
-    "facebook_app_id" => "",
-    "facebook_app_secret" => "",
-    "linkedin_enabled" => "false",
-    "linkedin_client_id" => "",
-    "linkedin_client_secret" => ""
-  }
 
   @impl true
   def mount(_params, _session, socket) do
@@ -43,6 +23,7 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
      |> assign(:modal_mode, nil)
      |> assign(:editing_application, nil)
      |> assign(:viewing_application, nil)
+     |> assign(:deactivating_application, nil)
      |> assign(:revealed_tokens, %{})
      |> load_organizations(user, platform_owner?)
      |> assign_forms()
@@ -91,128 +72,10 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
           </div>
         </div>
 
-        <div class="hidden overflow-x-auto rounded-2xl border border-base-300 bg-base-100 shadow-sm lg:block">
-          <table class="w-full text-left text-sm">
-            <thead class="border-b border-base-300 bg-base-200/50 text-xs uppercase tracking-wide text-base-content/60">
-              <tr>
-                <th class="px-4 py-3 font-medium">Application</th>
-                <th class="px-4 py-3 font-medium">Organization</th>
-                <th class="px-4 py-3 font-medium">Status</th>
-                <th class="px-4 py-3 font-medium">Auth</th>
-                <th class="px-4 py-3 font-medium">Redirect URLs</th>
-                <th class="px-4 py-3 font-medium"><span class="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-base-300">
-              <tr :for={application <- @applications} id={"application-#{application.id}"}>
-                <td class="px-4 py-3">
-                  <div class="font-medium">{application.name}</div>
-                  <div class="text-xs text-base-content/60">
-                    {application.logo_url || "No logo URL"}
-                  </div>
-                </td>
-                <td class="px-4 py-3"><.org_badge organization={application.organization} /></td>
-                <td class="px-4 py-3"><.status_badges application={application} /></td>
-                <td class="px-4 py-3">
-                  <div class="flex flex-wrap gap-1.5">
-                    <.auth_badge label="Password" enabled={application.password_enabled} />
-                    <.auth_badge label="Magic link" enabled={application.magic_link_enabled} />
-                    <.auth_badge
-                      label="Google"
-                      enabled={application.google_enabled}
-                      configured={present?(application.google_client_id)}
-                    />
-                    <.auth_badge
-                      label="Facebook"
-                      enabled={application.facebook_enabled}
-                      configured={present?(application.facebook_app_id)}
-                    />
-                    <.auth_badge
-                      label="LinkedIn"
-                      enabled={application.linkedin_enabled}
-                      configured={present?(application.linkedin_client_id)}
-                    />
-                  </div>
-                </td>
-                <td class="max-w-xs px-4 py-3 text-base-content/70">
-                  {Enum.join(application.redirect_urls, ", ")}
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <.application_actions application={application} />
-                </td>
-              </tr>
-              <tr :if={@applications == []}>
-                <td colspan="6" class="px-4 py-8 text-center text-base-content/60">
-                  No applications yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <Components.applications_grid applications={@applications} />
 
-        <div class="space-y-3 lg:hidden">
-          <article
-            :for={application <- @applications}
-            id={"application-card-#{application.id}"}
-            class="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <h3 class="truncate font-semibold">{application.name}</h3>
-                <p class="mt-1 truncate text-sm text-base-content/70">
-                  {application.logo_url || "No logo URL"}
-                </p>
-              </div>
-              <.org_badge organization={application.organization} />
-            </div>
-
-            <div class="mt-3">
-              <.status_badges application={application} />
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-1.5">
-              <.auth_badge label="Password" enabled={application.password_enabled} />
-              <.auth_badge label="Magic link" enabled={application.magic_link_enabled} />
-              <.auth_badge
-                label="Google"
-                enabled={application.google_enabled}
-                configured={present?(application.google_client_id)}
-              />
-              <.auth_badge
-                label="Facebook"
-                enabled={application.facebook_enabled}
-                configured={present?(application.facebook_app_id)}
-              />
-              <.auth_badge
-                label="LinkedIn"
-                enabled={application.linkedin_enabled}
-                configured={present?(application.linkedin_client_id)}
-              />
-            </div>
-
-            <dl class="mt-4 space-y-3 text-sm">
-              <div>
-                <dt class="text-xs uppercase tracking-wide text-base-content/50">Redirect URLs</dt>
-                <dd class="mt-1 font-medium">{Enum.join(application.redirect_urls, ", ")}</dd>
-              </div>
-            </dl>
-
-            <div class="mt-4">
-              <.application_actions application={application} />
-            </div>
-          </article>
-
-          <div
-            :if={@applications == []}
-            class="rounded-2xl border border-base-300 bg-base-100 p-6 text-center text-sm text-base-content/60 shadow-sm"
-          >
-            No applications yet.
-          </div>
-        </div>
-
-        <.application_modal
+        <Components.application_form_modal
           :if={@modal_mode in [:create, :edit]}
-          mode={@modal_mode}
           form={if @modal_mode == :create, do: @create_form, else: @edit_form}
           event={if @modal_mode == :create, do: "create_application", else: "update_application"}
           organizations={@organizations}
@@ -221,10 +84,15 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
           submit_label={if @modal_mode == :create, do: "Create application", else: "Save changes"}
         />
 
-        <.application_details_modal
+        <Components.application_details_modal
           :if={@modal_mode == :view and @viewing_application}
           application={@viewing_application}
           token={Map.get(@revealed_tokens, @viewing_application.id)}
+        />
+
+        <Components.deactivate_confirmation_modal
+          :if={@modal_mode == :confirm_deactivate and @deactivating_application}
+          application={@deactivating_application}
         />
       </section>
     </DashboardLayout.dashboard_layout>
@@ -244,19 +112,38 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
   end
 
   def handle_event("new_application", _params, socket) do
+    data = Forms.new_data()
+
     {:noreply,
-     assign(socket,
-       modal_mode: :create,
-       create_form: new_form(),
-       editing_application: nil,
-       viewing_application: nil
-     )}
+     socket
+     |> assign(:modal_mode, :create)
+     |> assign(:create_form_data, data)
+     |> assign(:create_form, Forms.form_for(data))
+     |> assign(:editing_application, nil)
+     |> assign(:viewing_application, nil)
+     |> assign(:deactivating_application, nil)}
+  end
+
+  def handle_event("change_application_form", %{"application" => params}, socket) do
+    {:noreply, update_active_form(socket, params)}
+  end
+
+  def handle_event("add_form_list_item", %{"field" => field}, socket) do
+    {:noreply, update_active_form_list(socket, field, :add)}
+  end
+
+  def handle_event("remove_form_list_item", %{"field" => field, "index" => index}, socket) do
+    {:noreply, update_active_form_list(socket, field, {:remove, String.to_integer(index)})}
   end
 
   def handle_event("create_application", %{"application" => params}, socket) do
     user = socket.assigns.current_user
 
-    with {:ok, attrs} <- attrs_for_create(socket, params),
+    organization_id =
+      socket.assigns.org_admin_organization && socket.assigns.org_admin_organization.id
+
+    with {:ok, attrs} <-
+           Forms.attrs_for_create(params, socket.assigns.platform_owner?, organization_id),
          {:ok, application} <-
            SsoApplication
            |> Ash.Changeset.for_create(:create, attrs, actor: user)
@@ -266,8 +153,8 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
       {:noreply,
        socket
        |> put_flash(:info, "Application created.")
-       |> assign(:create_form, new_form())
-       |> assign(:modal_mode, nil)
+       |> close_modal()
+       |> reset_create_form()
        |> put_revealed_token(application.id, token)
        |> load_applications(user)}
     else
@@ -281,20 +168,40 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
 
     case get_application(id, user) do
       {:ok, application} ->
+        data = Forms.edit_data(application)
+
         {:noreply,
          socket
          |> assign(:modal_mode, :edit)
          |> assign(:editing_application, application)
          |> assign(:viewing_application, nil)
-         |> assign(:edit_form, edit_form(application))}
+         |> assign(:deactivating_application, nil)
+         |> assign(:edit_form_data, data)
+         |> assign(:edit_form, Forms.form_for(data))}
 
       _error ->
         {:noreply, put_flash(socket, :error, "Could not load application.")}
     end
   end
 
-  def handle_event("cancel_edit", _params, socket) do
-    {:noreply, close_modal(socket)}
+  def handle_event("update_application", %{"application" => params}, socket) do
+    user = socket.assigns.current_user
+    application = socket.assigns.editing_application
+
+    with attrs <- Forms.attrs_for_update(params),
+         {:ok, _application} <-
+           application
+           |> Ash.Changeset.for_update(:update, attrs, actor: user)
+           |> Ash.update() do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Application updated.")
+       |> close_modal()
+       |> load_applications(user)}
+    else
+      _error ->
+        {:noreply, put_flash(socket, :error, "Could not update application.")}
+    end
   end
 
   def handle_event("close_modal", _params, socket) do
@@ -310,31 +217,12 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
          assign(socket,
            modal_mode: :view,
            viewing_application: application,
-           editing_application: nil
+           editing_application: nil,
+           deactivating_application: nil
          )}
 
       _error ->
         {:noreply, put_flash(socket, :error, "Could not load application.")}
-    end
-  end
-
-  def handle_event("update_application", %{"application" => params}, socket) do
-    user = socket.assigns.current_user
-    application = socket.assigns.editing_application
-
-    with attrs <- attrs_for_update(params),
-         {:ok, _application} <-
-           application
-           |> Ash.Changeset.for_update(:update, attrs, actor: user)
-           |> Ash.update() do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Application updated.")
-       |> close_modal()
-       |> load_applications(user)}
-    else
-      _error ->
-        {:noreply, put_flash(socket, :error, "Could not update application.")}
     end
   end
 
@@ -378,482 +266,32 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     manage_application(socket, id, :restore, "Application restored.")
   end
 
-  def handle_event("deactivate_application", %{"id" => id}, socket) do
-    manage_application(socket, id, :deactivate, "Application deactivated.")
+  def handle_event("request_deactivate_application", %{"id" => id}, socket) do
+    user = socket.assigns.current_user
+
+    case get_application(id, user) do
+      {:ok, application} ->
+        {:noreply,
+         assign(socket,
+           modal_mode: :confirm_deactivate,
+           deactivating_application: application,
+           editing_application: nil,
+           viewing_application: nil
+         )}
+
+      _error ->
+        {:noreply, put_flash(socket, :error, "Could not load application.")}
+    end
+  end
+
+  def handle_event("confirm_deactivate_application", %{"id" => id}, socket) do
+    socket
+    |> close_modal()
+    |> manage_application(id, :deactivate, "Application deactivated.")
   end
 
   def handle_event("activate_application", %{"id" => id}, socket) do
     manage_application(socket, id, :activate, "Application activated.")
-  end
-
-  def handle_event("delete_application", %{"id" => id}, socket) do
-    user = socket.assigns.current_user
-
-    with {:ok, application} <- get_application(id, user),
-         :ok <- Ash.destroy(application, actor: user) do
-      {:noreply,
-       socket
-       |> put_flash(:info, "Application deleted.")
-       |> update(:revealed_tokens, &Map.delete(&1, application.id))
-       |> load_applications(user)}
-    else
-      _error ->
-        {:noreply, put_flash(socket, :error, "Could not delete application.")}
-    end
-  end
-
-  defp manage_application(socket, id, action, success_message) do
-    user = socket.assigns.current_user
-
-    with {:ok, application} <- get_application(id, user),
-         {:ok, _application} <-
-           application
-           |> Ash.Changeset.for_update(action, %{}, actor: user)
-           |> Ash.update() do
-      {:noreply,
-       socket
-       |> put_flash(:info, success_message)
-       |> load_applications(user)}
-    else
-      _error ->
-        {:noreply, put_flash(socket, :error, "Could not update application.")}
-    end
-  end
-
-  defp close_modal(socket) do
-    assign(socket,
-      modal_mode: nil,
-      editing_application: nil,
-      viewing_application: nil,
-      edit_form: nil
-    )
-  end
-
-  attr :form, Phoenix.HTML.Form, required: true
-  attr :event, :string, required: true
-  attr :title, :string, required: true
-  attr :mode, :atom, required: true
-  attr :submit_label, :string, required: true
-  attr :organizations, :list, required: true
-  attr :platform_owner?, :boolean, required: true
-
-  defp application_modal(assigns) do
-    ~H"""
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
-      <div class="mx-auto my-6 max-w-5xl rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <h3 class="text-base font-semibold">{@title}</h3>
-          <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
-            Close
-          </button>
-        </div>
-
-        <.application_form
-          form={@form}
-          event={@event}
-          submit_label={@submit_label}
-          organizations={@organizations}
-          platform_owner?={@platform_owner?}
-        />
-      </div>
-    </div>
-    """
-  end
-
-  attr :form, Phoenix.HTML.Form, required: true
-  attr :event, :string, required: true
-  attr :submit_label, :string, required: true
-  attr :organizations, :list, required: true
-  attr :platform_owner?, :boolean, required: true
-
-  defp application_form(assigns) do
-    ~H"""
-    <.form
-      for={@form}
-      id={String.replace(@event, "_", "-") <> "-form"}
-      phx-submit={@event}
-      class="space-y-4"
-    >
-      <div class="grid gap-4 md:grid-cols-2">
-        <div :if={@platform_owner?}>
-          <label class="text-sm font-medium">Organization</label>
-          <select
-            name={@form[:organization_id].name}
-            value={@form[:organization_id].value}
-            required
-            class="select select-bordered mt-2 w-full"
-          >
-            <option value="">Choose organization</option>
-            <option :for={organization <- @organizations} value={organization.id}>
-              {organization.name}
-            </option>
-          </select>
-        </div>
-
-        <.text_input field={@form[:name]} label="Name" required />
-        <.text_input field={@form[:logo_url]} label="Logo URL" />
-        <.text_input field={@form[:email_from_name]} label="Email from name" />
-        <.text_input field={@form[:email_from_address]} label="Email from address" type="email" />
-      </div>
-
-      <div class="grid gap-4 md:grid-cols-2">
-        <.textarea_input field={@form[:allowed_origins]} label="Allowed origins" />
-        <.textarea_input field={@form[:redirect_urls]} label="Redirect URLs" required />
-      </div>
-
-      <div class="grid gap-4 lg:grid-cols-3">
-        <.provider_panel
-          title="Core auth"
-          fields={[
-            {@form[:password_enabled], "Password"},
-            {@form[:magic_link_enabled], "Magic link"}
-          ]}
-        />
-
-        <.oauth_panel
-          title="Google"
-          enabled={@form[:google_enabled]}
-          id_field={@form[:google_client_id]}
-          secret_field={@form[:google_client_secret]}
-          id_label="Google client ID"
-          secret_label="Google client secret"
-        />
-
-        <.oauth_panel
-          title="Facebook"
-          enabled={@form[:facebook_enabled]}
-          id_field={@form[:facebook_app_id]}
-          secret_field={@form[:facebook_app_secret]}
-          id_label="Facebook app ID"
-          secret_label="Facebook app secret"
-        />
-
-        <.oauth_panel
-          title="LinkedIn"
-          enabled={@form[:linkedin_enabled]}
-          id_field={@form[:linkedin_client_id]}
-          secret_field={@form[:linkedin_client_secret]}
-          id_label="LinkedIn client ID"
-          secret_label="LinkedIn client secret"
-        />
-      </div>
-
-      <div class="flex justify-end">
-        <button type="submit" class="btn btn-primary">{@submit_label}</button>
-      </div>
-    </.form>
-    """
-  end
-
-  attr :field, Phoenix.HTML.FormField, required: true
-  attr :label, :string, required: true
-  attr :type, :string, default: "text"
-  attr :required, :boolean, default: false
-
-  defp text_input(assigns) do
-    ~H"""
-    <div>
-      <label class="text-sm font-medium">{@label}</label>
-      <input
-        type={@type}
-        name={@field.name}
-        value={@field.value}
-        required={@required}
-        class="input input-bordered mt-2 w-full"
-      />
-    </div>
-    """
-  end
-
-  attr :field, Phoenix.HTML.FormField, required: true
-  attr :label, :string, required: true
-  attr :required, :boolean, default: false
-
-  defp textarea_input(assigns) do
-    ~H"""
-    <div>
-      <label class="text-sm font-medium">{@label}</label>
-      <textarea
-        name={@field.name}
-        required={@required}
-        rows="3"
-        class="textarea textarea-bordered mt-2 w-full"
-      >{@field.value}</textarea>
-    </div>
-    """
-  end
-
-  attr :title, :string, required: true
-  attr :fields, :list, required: true
-
-  defp provider_panel(assigns) do
-    ~H"""
-    <div class="rounded-xl border border-base-300 bg-base-200/30 p-4">
-      <h4 class="text-sm font-semibold">{@title}</h4>
-      <div class="mt-3 space-y-2">
-        <label :for={{field, label} <- @fields} class="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name={field.name}
-            value="true"
-            checked={field.value in [true, "true"]}
-            class="checkbox checkbox-primary checkbox-sm"
-          />
-          <span>{label}</span>
-        </label>
-      </div>
-    </div>
-    """
-  end
-
-  attr :title, :string, required: true
-  attr :enabled, Phoenix.HTML.FormField, required: true
-  attr :id_field, Phoenix.HTML.FormField, required: true
-  attr :secret_field, Phoenix.HTML.FormField, required: true
-  attr :id_label, :string, required: true
-  attr :secret_label, :string, required: true
-
-  defp oauth_panel(assigns) do
-    ~H"""
-    <div class="rounded-xl border border-base-300 bg-base-200/30 p-4">
-      <label class="flex items-center gap-2 text-sm font-semibold">
-        <input
-          type="checkbox"
-          name={@enabled.name}
-          value="true"
-          checked={@enabled.value in [true, "true"]}
-          class="checkbox checkbox-primary checkbox-sm"
-        />
-        <span>{@title}</span>
-      </label>
-
-      <div class="mt-3 space-y-3">
-        <input
-          type="text"
-          name={@id_field.name}
-          value={@id_field.value}
-          placeholder={@id_label}
-          class="input input-bordered input-sm w-full"
-        />
-        <input
-          type="password"
-          name={@secret_field.name}
-          value=""
-          placeholder={@secret_label}
-          class="input input-bordered input-sm w-full"
-        />
-      </div>
-    </div>
-    """
-  end
-
-  attr :organization, :map, required: true
-
-  defp org_badge(assigns) do
-    ~H"""
-    <span class="inline-flex rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 dark:border-sky-400/40 dark:bg-sky-400/10 dark:text-sky-200">
-      {@organization.name}
-    </span>
-    """
-  end
-
-  attr :application, SsoApplication, required: true
-
-  defp status_badges(assigns) do
-    ~H"""
-    <div class="flex flex-wrap gap-1.5">
-      <span
-        :if={is_nil(@application.archived_at)}
-        class="inline-flex rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200"
-      >
-        Active
-      </span>
-      <span
-        :if={!is_nil(@application.archived_at)}
-        class="inline-flex rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:border-zinc-500/50 dark:bg-zinc-500/10 dark:text-zinc-200"
-      >
-        Archived
-      </span>
-      <span
-        :if={!is_nil(@application.deactivated_at)}
-        class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200"
-      >
-        Deactivated
-      </span>
-    </div>
-    """
-  end
-
-  attr :label, :string, required: true
-  attr :enabled, :boolean, required: true
-  attr :configured, :boolean, default: true
-
-  defp auth_badge(assigns) do
-    ~H"""
-    <span class={[
-      "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
-      @enabled && @configured &&
-        "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200",
-      @enabled && !@configured &&
-        "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200",
-      !@enabled &&
-        "border-zinc-300 bg-zinc-100 text-zinc-700 dark:border-zinc-500/50 dark:bg-zinc-500/10 dark:text-zinc-200"
-    ]}>
-      {@label}: {status_label(@enabled, @configured)}
-    </span>
-    """
-  end
-
-  attr :token, :string, default: nil
-
-  defp token_value(assigns) do
-    ~H"""
-    <code :if={@token} class="block max-w-xs overflow-x-auto rounded-lg bg-base-200 p-2 text-xs">
-      {@token}
-    </code>
-    <span :if={!@token} class="text-xs text-base-content/50">Hidden</span>
-    """
-  end
-
-  attr :application, SsoApplication, required: true
-
-  defp application_actions(assigns) do
-    ~H"""
-    <div class="flex flex-wrap justify-end gap-2">
-      <button
-        type="button"
-        phx-click="view_application"
-        phx-value-id={@application.id}
-        class="btn btn-ghost btn-xs"
-      >
-        View
-      </button>
-      <button
-        type="button"
-        phx-click="edit_application"
-        phx-value-id={@application.id}
-        class="btn btn-ghost btn-xs"
-      >
-        Edit
-      </button>
-      <button
-        type="button"
-        phx-click={
-          if is_nil(@application.archived_at), do: "archive_application", else: "restore_application"
-        }
-        phx-value-id={@application.id}
-        class="btn btn-ghost btn-xs"
-      >
-        {if is_nil(@application.archived_at), do: "Archive", else: "Restore"}
-      </button>
-      <button
-        type="button"
-        phx-click={
-          if is_nil(@application.deactivated_at),
-            do: "deactivate_application",
-            else: "activate_application"
-        }
-        phx-value-id={@application.id}
-        class="btn btn-warning btn-xs"
-      >
-        {if is_nil(@application.deactivated_at), do: "Deactivate", else: "Activate"}
-      </button>
-    </div>
-    """
-  end
-
-  attr :application, SsoApplication, required: true
-  attr :token, :string, default: nil
-
-  defp application_details_modal(assigns) do
-    ~H"""
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
-      <div class="mx-auto my-6 max-w-3xl rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h3 class="text-base font-semibold">{@application.name}</h3>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <.org_badge organization={@application.organization} />
-              <.status_badges application={@application} />
-            </div>
-          </div>
-          <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
-            Close
-          </button>
-        </div>
-
-        <dl class="grid gap-4 text-sm md:grid-cols-2">
-          <div>
-            <dt class="text-xs uppercase tracking-wide text-base-content/50">Logo URL</dt>
-            <dd class="mt-1 font-medium">{@application.logo_url || "None"}</dd>
-          </div>
-          <div>
-            <dt class="text-xs uppercase tracking-wide text-base-content/50">Email from</dt>
-            <dd class="mt-1 font-medium">
-              {[@application.email_from_name, @application.email_from_address]
-              |> Enum.reject(&is_nil/1)
-              |> Enum.join(" ")}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-xs uppercase tracking-wide text-base-content/50">Allowed origins</dt>
-            <dd class="mt-1 font-medium">{Enum.join(@application.allowed_origins, ", ")}</dd>
-          </div>
-          <div>
-            <dt class="text-xs uppercase tracking-wide text-base-content/50">Redirect URLs</dt>
-            <dd class="mt-1 font-medium">{Enum.join(@application.redirect_urls, ", ")}</dd>
-          </div>
-          <div class="md:col-span-2">
-            <dt class="text-xs uppercase tracking-wide text-base-content/50">Auth methods</dt>
-            <dd class="mt-2 flex flex-wrap gap-1.5">
-              <.auth_badge label="Password" enabled={@application.password_enabled} />
-              <.auth_badge label="Magic link" enabled={@application.magic_link_enabled} />
-              <.auth_badge
-                label="Google"
-                enabled={@application.google_enabled}
-                configured={present?(@application.google_client_id)}
-              />
-              <.auth_badge
-                label="Facebook"
-                enabled={@application.facebook_enabled}
-                configured={present?(@application.facebook_app_id)}
-              />
-              <.auth_badge
-                label="LinkedIn"
-                enabled={@application.linkedin_enabled}
-                configured={present?(@application.linkedin_client_id)}
-              />
-            </dd>
-          </div>
-          <div class="md:col-span-2">
-            <dt class="text-xs uppercase tracking-wide text-base-content/50">Client token</dt>
-            <dd class="mt-2">
-              <.token_value token={@token} />
-            </dd>
-          </div>
-        </dl>
-
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            phx-click="reveal_token"
-            phx-value-id={@application.id}
-            class="btn btn-ghost btn-sm"
-          >
-            Reveal token
-          </button>
-          <button
-            type="button"
-            phx-click="rotate_token"
-            phx-value-id={@application.id}
-            class="btn btn-warning btn-sm"
-          >
-            Rotate token
-          </button>
-        </div>
-      </div>
-    </div>
-    """
   end
 
   defp load_organizations(socket, user, true) do
@@ -882,7 +320,14 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
   end
 
   defp assign_forms(socket) do
-    assign(socket, create_form: new_form(), edit_form: nil)
+    create_data = Forms.new_data()
+
+    assign(socket,
+      create_form_data: create_data,
+      create_form: Forms.form_for(create_data),
+      edit_form_data: nil,
+      edit_form: nil
+    )
   end
 
   defp load_applications(socket, user) do
@@ -939,69 +384,79 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     |> Ash.read_one()
   end
 
-  defp attrs_for_create(socket, params) do
-    organization_id =
-      if socket.assigns.platform_owner? do
-        blank_to_nil(params["organization_id"])
-      else
-        socket.assigns.org_admin_organization && socket.assigns.org_admin_organization.id
-      end
+  defp manage_application(socket, id, action, success_message) do
+    user = socket.assigns.current_user
 
-    if is_nil(organization_id) do
-      {:error, :missing_organization}
+    with {:ok, application} <- get_application(id, user),
+         {:ok, _application} <-
+           application
+           |> Ash.Changeset.for_update(action, %{}, actor: user)
+           |> Ash.update() do
+      {:noreply,
+       socket
+       |> put_flash(:info, success_message)
+       |> load_applications(user)}
     else
-      {:ok, Map.put(attrs_for_update(params), :organization_id, organization_id)}
+      _error ->
+        {:noreply, put_flash(socket, :error, "Could not update application.")}
     end
   end
 
-  defp attrs_for_update(params) do
-    %{
-      name: params["name"],
-      logo_url: blank_to_nil(params["logo_url"]),
-      allowed_origins: lines(params["allowed_origins"]),
-      redirect_urls: lines(params["redirect_urls"]),
-      email_from_name: blank_to_nil(params["email_from_name"]),
-      email_from_address: blank_to_nil(params["email_from_address"]),
-      password_enabled: checked?(params["password_enabled"]),
-      magic_link_enabled: checked?(params["magic_link_enabled"]),
-      google_enabled: checked?(params["google_enabled"]),
-      google_client_id: blank_to_nil(params["google_client_id"]),
-      facebook_enabled: checked?(params["facebook_enabled"]),
-      facebook_app_id: blank_to_nil(params["facebook_app_id"]),
-      linkedin_enabled: checked?(params["linkedin_enabled"]),
-      linkedin_client_id: blank_to_nil(params["linkedin_client_id"])
-    }
-    |> put_secret(:google_client_secret, params["google_client_secret"])
-    |> put_secret(:facebook_app_secret, params["facebook_app_secret"])
-    |> put_secret(:linkedin_client_secret, params["linkedin_client_secret"])
+  defp update_active_form(%{assigns: %{modal_mode: :create}} = socket, params) do
+    data = Forms.update_data(socket.assigns.create_form_data, params)
+
+    assign(socket,
+      create_form_data: data,
+      create_form: Forms.form_for(data)
+    )
   end
 
-  defp put_secret(attrs, _key, value) when value in [nil, ""], do: attrs
-  defp put_secret(attrs, key, value), do: Map.put(attrs, key, value)
+  defp update_active_form(%{assigns: %{modal_mode: :edit}} = socket, params) do
+    data = Forms.update_data(socket.assigns.edit_form_data, params)
 
-  defp new_form do
-    to_form(@empty_form, as: :application)
+    assign(socket,
+      edit_form_data: data,
+      edit_form: Forms.form_for(data)
+    )
   end
 
-  defp edit_form(application) do
-    @empty_form
-    |> Map.merge(%{
-      "name" => application.name,
-      "logo_url" => application.logo_url || "",
-      "allowed_origins" => Enum.join(application.allowed_origins, "\n"),
-      "redirect_urls" => Enum.join(application.redirect_urls, "\n"),
-      "email_from_name" => application.email_from_name || "",
-      "email_from_address" => application.email_from_address || "",
-      "password_enabled" => application.password_enabled,
-      "magic_link_enabled" => application.magic_link_enabled,
-      "google_enabled" => application.google_enabled,
-      "google_client_id" => application.google_client_id || "",
-      "facebook_enabled" => application.facebook_enabled,
-      "facebook_app_id" => application.facebook_app_id || "",
-      "linkedin_enabled" => application.linkedin_enabled,
-      "linkedin_client_id" => application.linkedin_client_id || ""
-    })
-    |> to_form(as: :application)
+  defp update_active_form(socket, _params), do: socket
+
+  defp update_active_form_list(%{assigns: %{modal_mode: :create}} = socket, field, action) do
+    data = apply_list_action(socket.assigns.create_form_data, field, action)
+
+    assign(socket,
+      create_form_data: data,
+      create_form: Forms.form_for(data)
+    )
+  end
+
+  defp update_active_form_list(%{assigns: %{modal_mode: :edit}} = socket, field, action) do
+    data = apply_list_action(socket.assigns.edit_form_data, field, action)
+
+    assign(socket,
+      edit_form_data: data,
+      edit_form: Forms.form_for(data)
+    )
+  end
+
+  defp update_active_form_list(socket, _field, _action), do: socket
+
+  defp apply_list_action(data, field, :add) do
+    Forms.add_list_item(data, field)
+  end
+
+  defp apply_list_action(data, field, {:remove, index}) do
+    Forms.remove_list_item(data, field, index)
+  end
+
+  defp reset_create_form(socket) do
+    data = Forms.new_data()
+
+    assign(socket,
+      create_form_data: data,
+      create_form: Forms.form_for(data)
+    )
   end
 
   defp reveal_loaded_token(application, user) do
@@ -1017,29 +472,14 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     update(socket, :revealed_tokens, &Map.put(&1, id, token))
   end
 
-  defp lines(value) when is_binary(value) do
-    value
-    |> String.split(["\n", ","], trim: true)
-    |> Enum.map(&String.trim/1)
-    |> Enum.reject(&(&1 == ""))
+  defp close_modal(socket) do
+    assign(socket,
+      modal_mode: nil,
+      editing_application: nil,
+      viewing_application: nil,
+      deactivating_application: nil,
+      edit_form_data: nil,
+      edit_form: nil
+    )
   end
-
-  defp lines(_), do: []
-
-  defp checked?(value), do: value in [true, "true", "on"]
-
-  defp blank_to_nil(value) when value in [nil, ""], do: nil
-
-  defp blank_to_nil(value) when is_binary(value) do
-    value = String.trim(value)
-    if value == "", do: nil, else: value
-  end
-
-  defp blank_to_nil(value), do: value
-
-  defp present?(value), do: is_binary(value) and String.trim(value) != ""
-
-  defp status_label(false, _configured), do: "Off"
-  defp status_label(true, false), do: "Needs config"
-  defp status_label(true, true), do: "On"
 end

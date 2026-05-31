@@ -279,11 +279,13 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
     {:ok, view, html} = live(conn, ~p"/dashboard/applications")
 
     assert html =~ "Applications"
+    assert html =~ "applications-card-grid"
     assert html =~ "Alpha Portal"
     assert html =~ "Beta Console"
     assert html =~ "Alpha Org"
     assert html =~ "Beta Org"
     assert html =~ "Google: Needs config"
+    refute html =~ "<table"
 
     html =
       view
@@ -333,8 +335,8 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
       |> form("#create-application-form", %{
         application: %{
           name: "Org Admin App",
-          redirect_urls: "https://example.com/callback",
-          allowed_origins: "https://example.com",
+          redirect_urls: ["https://example.com/callback", "https://example.com/return"],
+          allowed_origins: ["https://example.com"],
           password_enabled: "true",
           magic_link_enabled: "true"
         }
@@ -355,6 +357,7 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
 
     assert created.organization_id == own_org.id
     assert byte_size(created.client_token_hash) == 32
+    assert created.redirect_urls == ["https://example.com/callback", "https://example.com/return"]
   end
 
   test "signed-in users without a scoped role are redirected from applications page", %{
@@ -401,6 +404,7 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
       |> element("button[phx-click='view_application'][phx-value-id='#{application.id}']")
       |> render_click()
 
+    assert html =~ "Application profile"
     assert html =~ "Hidden"
 
     html =
@@ -435,6 +439,62 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
     refute rotated.client_token == original_token
     refute rotated.client_token_hash == original_hash
     assert html =~ rotated.client_token
+  end
+
+  test "application archive and deactivate flows update status", %{conn: conn} do
+    owner = user!("platform-app-status@example.com", "Platform Status Owner")
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    organization = Ash.Seed.seed!(Organization, %{name: "Status Org", text_logo: "Status"})
+    application = create_application!(owner, organization, %{name: "Status App"})
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, html} = live(conn, ~p"/dashboard/applications")
+
+    assert html =~ "Status App"
+    assert html =~ "Active"
+
+    html =
+      view
+      |> element("button[phx-click='archive_application'][phx-value-id='#{application.id}']")
+      |> render_click()
+
+    assert html =~ "Application archived."
+    assert html =~ "Archived"
+    assert application_by_id!(application.id).archived_at
+
+    html =
+      view
+      |> element(
+        "button[phx-click='request_deactivate_application'][phx-value-id='#{application.id}']"
+      )
+      |> render_click()
+
+    assert html =~ "Deactivate Status App?"
+    refute application_by_id!(application.id).deactivated_at
+
+    html =
+      view
+      |> element(
+        "button[phx-click='confirm_deactivate_application'][phx-value-id='#{application.id}']"
+      )
+      |> render_click()
+
+    assert html =~ "Application deactivated."
+    assert html =~ "Deactivated"
+    assert application_by_id!(application.id).deactivated_at
+
+    html =
+      view
+      |> element("button[phx-click='activate_application'][phx-value-id='#{application.id}']")
+      |> render_click()
+
+    assert html =~ "Application activated."
+    refute application_by_id!(application.id).deactivated_at
   end
 
   test "platform owners can create and revoke their own API keys", %{conn: conn} do
