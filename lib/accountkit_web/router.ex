@@ -130,6 +130,7 @@ defmodule AccountkitWeb.Router do
         {AccountkitWeb.LiveUserAuth, :dashboard_user_required}
       ] do
       live "/dashboard", Pages.DashboardLive, :show
+      live "/dashboard/applications", Pages.Dashboard.ApplicationsLive, :index
       live "/dashboard/organizations", Pages.Dashboard.OrganizationsLive, :index
       live "/dashboard/users", Pages.Dashboard.UsersLive, :index
       live "/dashboard/api-keys", Pages.Dashboard.ApiKeysLive, :index

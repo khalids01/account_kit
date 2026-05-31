@@ -3,6 +3,13 @@ config :accountkit, token_signing_secret: "V7VU+6fEM8UH+dbVxb83ytZ4ZaEiBcNZ"
 config :bcrypt_elixir, log_rounds: 1
 config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
 
+config :accountkit, Accountkit.Vault,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("Wm1SUGFqa2ISZgfCAUWz53k/e/gWW6jNbLP86qzWX6E=")}
+  ]
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

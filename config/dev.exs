@@ -71,6 +71,13 @@ config :accountkit, AccountkitWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :accountkit, dev_routes: true, token_signing_secret: "It6qejjNK57jyv1elf6LiqMsn+L46AXu"
 
+config :accountkit, Accountkit.Vault,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("Wm1SUGFqa2ISZgfCAUWz53k/e/gWW6jNbLP86qzWX6E=")}
+  ]
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 

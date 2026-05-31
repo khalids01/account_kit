@@ -78,6 +78,8 @@ config :accountkit,
   ash_authentication: [return_error_on_invalid_magic_link_token?: true],
   rate_limit_backend: :ets
 
+config :accountkit, Accountkit.Vault, json_library: Jason
+
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 

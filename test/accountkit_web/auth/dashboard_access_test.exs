@@ -4,8 +4,18 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
   import AshAuthentication.Plug.Helpers
   import Phoenix.LiveViewTest
 
-  alias Accountkit.Accounts.{ApiKey, Organization, OrganizationMembership, PlatformRole, User}
+  alias Accountkit.Accounts.{
+    ApiKey,
+    Organization,
+    OrganizationMembership,
+    PlatformRole,
+    SsoApplication,
+    User
+  }
+
   alias Accountkit.Settings.RateLimitPolicy
+
+  require Ash.Query
 
   test "anonymous users are redirected from control-plane routes", %{conn: conn} do
     conn = get(conn, ~p"/admin/rate-limits")
@@ -251,6 +261,171 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
              live(conn, ~p"/dashboard/users")
   end
 
+  test "platform owners can list and filter applications by organization", %{conn: conn} do
+    owner = user!("platform-apps@example.com", "Platform Apps")
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    alpha = Ash.Seed.seed!(Organization, %{name: "Alpha Org", text_logo: "Alpha"})
+    beta = Ash.Seed.seed!(Organization, %{name: "Beta Org", text_logo: "Beta"})
+
+    create_application!(owner, alpha, %{name: "Alpha Portal"})
+    create_application!(owner, beta, %{name: "Beta Console", google_enabled: true})
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, html} = live(conn, ~p"/dashboard/applications")
+
+    assert html =~ "Applications"
+    assert html =~ "Alpha Portal"
+    assert html =~ "Beta Console"
+    assert html =~ "Alpha Org"
+    assert html =~ "Beta Org"
+    assert html =~ "Google: Needs config"
+
+    html =
+      view
+      |> form("form[phx-change='filter_organization']", %{organization_id: alpha.id})
+      |> render_change()
+
+    assert html =~ "Alpha Portal"
+    refute html =~ "Beta Console"
+  end
+
+  test "org admins see and create applications only for their organization", %{conn: conn} do
+    platform_owner = user!("platform-for-org-apps@example.com", "Platform Apps Owner")
+    org_admin = user!("org-apps-admin@example.com", "Org Apps Admin")
+
+    Ash.Seed.seed!(PlatformRole, %{user_id: platform_owner.id, role: :platform_owner})
+
+    own_org = Ash.Seed.seed!(Organization, %{name: "Own Apps Org", text_logo: "Own"})
+    other_org = Ash.Seed.seed!(Organization, %{name: "Other Apps Org", text_logo: "Other"})
+
+    Ash.Seed.seed!(OrganizationMembership, %{
+      organization_id: own_org.id,
+      user_id: org_admin.id,
+      role: :org_admin
+    })
+
+    create_application!(org_admin, own_org, %{name: "Own Portal"})
+    create_application!(platform_owner, other_org, %{name: "Other Portal"})
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(org_admin)
+
+    {:ok, view, html} = live(conn, ~p"/dashboard/applications")
+
+    assert html =~ "Own Portal"
+    assert html =~ "Own Apps Org"
+    refute html =~ "Other Portal"
+    refute html =~ "Choose organization"
+
+    html =
+      view
+      |> form("#create-application-form", %{
+        application: %{
+          name: "Org Admin App",
+          redirect_urls: "https://example.com/callback",
+          allowed_origins: "https://example.com",
+          password_enabled: "true",
+          magic_link_enabled: "true"
+        }
+      })
+      |> render_submit()
+
+    assert html =~ "Application created."
+    assert html =~ "Org Admin App"
+    assert html =~ "Own Apps Org"
+
+    [created] =
+      SsoApplication
+      |> Ash.Query.for_read(:list_for_organization, %{organization_id: own_org.id},
+        actor: org_admin
+      )
+      |> Ash.read!()
+      |> Enum.filter(&(&1.name == "Org Admin App"))
+
+    assert created.organization_id == own_org.id
+    assert byte_size(created.client_token_hash) == 32
+  end
+
+  test "signed-in users without a scoped role are redirected from applications page", %{
+    conn: conn
+  } do
+    user = user!("plain-apps@example.com")
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(user)
+
+    assert {:error, {:redirect, %{to: "/onboarding/organization"}}} =
+             live(conn, ~p"/dashboard/applications")
+  end
+
+  test "application token reveal, rotation, and hash lookup work", %{conn: conn} do
+    owner = user!("platform-app-token@example.com", "Platform Token Owner")
+    Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
+
+    organization = Ash.Seed.seed!(Organization, %{name: "Token Org", text_logo: "Token"})
+
+    application =
+      create_application!(owner, organization, %{
+        name: "Token App",
+        redirect_urls: ["https://token.example/callback"]
+      })
+
+    original_hash = application.client_token_hash
+    original_token = loaded_client_token!(application, owner)
+
+    conn =
+      conn
+      |> init_test_session(%{})
+      |> store_in_session(owner)
+
+    {:ok, view, html} = live(conn, ~p"/dashboard/applications")
+
+    assert html =~ "Hidden"
+    refute html =~ original_token
+
+    html =
+      view
+      |> element("button[phx-click='reveal_token'][phx-value-id='#{application.id}']")
+      |> render_click()
+
+    assert html =~ original_token
+
+    found =
+      SsoApplication
+      |> Ash.Query.for_read(:get_by_client_token_hash, %{
+        client_token_hash: SsoApplication.hash_token(original_token)
+      })
+      |> Ash.read_one!(authorize?: false)
+
+    assert found.id == application.id
+
+    html =
+      view
+      |> element("button[phx-click='rotate_token'][phx-value-id='#{application.id}']")
+      |> render_click()
+
+    assert html =~ "Application token rotated."
+
+    rotated =
+      application.id
+      |> application_by_id!()
+      |> Ash.load!(:client_token, actor: owner)
+
+    assert rotated.client_token =~ ~r/\A[0-9a-f]{64}\z/
+    refute rotated.client_token == original_token
+    refute rotated.client_token_hash == original_hash
+    assert html =~ rotated.client_token
+  end
+
   test "platform owners can create and revoke their own API keys", %{conn: conn} do
     owner = user!("platform-api-keys@example.com", "API Key Owner")
     Ash.Seed.seed!(PlatformRole, %{user_id: owner.id, role: :platform_owner})
@@ -386,5 +561,35 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
     |> Ash.Query.for_read(:list_all, %{})
     |> Ash.read!(authorize?: false)
     |> Enum.find(&(&1.key == key))
+  end
+
+  defp create_application!(actor, organization, attrs) do
+    attrs =
+      %{
+        organization_id: organization.id,
+        name: "Test Application",
+        redirect_urls: ["https://example.com/callback"],
+        allowed_origins: ["https://example.com"],
+        password_enabled: true,
+        magic_link_enabled: true
+      }
+      |> Map.merge(attrs)
+
+    SsoApplication
+    |> Ash.Changeset.for_create(:create, attrs, actor: actor)
+    |> Ash.create!()
+  end
+
+  defp loaded_client_token!(application, actor) do
+    application
+    |> Ash.load!(:client_token, actor: actor)
+    |> Map.fetch!(:client_token)
+  end
+
+  defp application_by_id!(id) do
+    SsoApplication
+    |> Ash.Query.for_read(:read, %{})
+    |> Ash.Query.filter(id == ^id)
+    |> Ash.read_one!(authorize?: false)
   end
 end

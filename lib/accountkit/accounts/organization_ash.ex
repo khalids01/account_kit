@@ -69,6 +69,7 @@ defmodule Accountkit.Accounts.Organization do
 
   relationships do
     has_many :memberships, Accountkit.Accounts.OrganizationMembership
+    has_many :sso_applications, Accountkit.Accounts.SsoApplication
   end
 
   calculations do

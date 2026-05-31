@@ -11,6 +11,7 @@ defmodule Accountkit.Accounts do
     resource Accountkit.Accounts.ApiKey
     resource Accountkit.Accounts.Organization
     resource Accountkit.Accounts.OrganizationMembership
+    resource Accountkit.Accounts.SsoApplication
     resource Accountkit.Accounts.PlatformRole
   end
 end

@@ -12,7 +12,9 @@ if config_env() in [:dev, :test] do
       case String.split(line, "=", parts: 2) do
         [key, value] ->
           key = String.trim(key)
-          value = value |> String.trim() |> String.trim_leading("\"") |> String.trim_trailing("\"")
+
+          value =
+            value |> String.trim() |> String.trim_leading("\"") |> String.trim_trailing("\"")
 
           if key != "" and is_nil(System.get_env(key)) do
             System.put_env(key, value)
@@ -100,6 +102,15 @@ if config_env() == :prod do
     token_signing_secret:
       System.get_env("TOKEN_SIGNING_SECRET") ||
         raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
+
+  cloak_key =
+    System.get_env("ACCOUNTKIT_CLOAK_KEY") ||
+      raise("Missing environment variable `ACCOUNTKIT_CLOAK_KEY`!")
+
+  config :accountkit, Accountkit.Vault,
+    ciphers: [
+      default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!(cloak_key)}
+    ]
 
   # ## SSL Support
   #

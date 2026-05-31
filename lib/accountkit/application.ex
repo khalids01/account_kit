@@ -11,6 +11,7 @@ defmodule Accountkit.Application do
 
     children = [
       AccountkitWeb.Telemetry,
+      Accountkit.Vault,
       Accountkit.Repo,
       {DNSCluster, query: Application.get_env(:accountkit, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Accountkit.PubSub},

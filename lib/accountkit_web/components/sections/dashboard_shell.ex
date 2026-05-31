@@ -58,6 +58,14 @@ defmodule AccountkitWeb.Components.Sections.DashboardShell do
             />
 
             <.dashboard_nav_item
+              icon="hero-window"
+              label="Applications"
+              href={~p"/dashboard/applications"}
+              collapsed?={@sidebar_collapsed?}
+              active={@active_nav == :applications}
+            />
+
+            <.dashboard_nav_item
               :if={@platform_owner?}
               icon="hero-building-office-2"
               label="Organizations"
