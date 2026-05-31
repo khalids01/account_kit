@@ -324,6 +324,10 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
     refute html =~ "Other Portal"
     refute html =~ "Choose organization"
 
+    view
+    |> element("button", "Create")
+    |> render_click()
+
     html =
       view
       |> form("#create-application-form", %{
@@ -389,8 +393,15 @@ defmodule AccountkitWeb.Auth.DashboardAccessTest do
 
     {:ok, view, html} = live(conn, ~p"/dashboard/applications")
 
-    assert html =~ "Hidden"
+    assert html =~ "Token App"
     refute html =~ original_token
+
+    html =
+      view
+      |> element("button[phx-click='view_application'][phx-value-id='#{application.id}']")
+      |> render_click()
+
+    assert html =~ "Hidden"
 
     html =
       view

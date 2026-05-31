@@ -104,6 +104,34 @@ defmodule Accountkit.Accounts.SsoApplication do
 
       change &generate_client_token/2
     end
+
+    update :archive do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :archived_at, DateTime.utc_now())
+      end
+    end
+
+    update :restore do
+      accept []
+      change set_attribute(:archived_at, nil)
+    end
+
+    update :deactivate do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :deactivated_at, DateTime.utc_now())
+      end
+    end
+
+    update :activate do
+      accept []
+      change set_attribute(:deactivated_at, nil)
+    end
   end
 
   policies do
@@ -240,6 +268,14 @@ defmodule Accountkit.Accounts.SsoApplication do
     attribute :client_token_hash, :binary do
       allow_nil? false
       sensitive? true
+    end
+
+    attribute :archived_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :deactivated_at, :utc_datetime_usec do
+      public? true
     end
 
     create_timestamp :created_at

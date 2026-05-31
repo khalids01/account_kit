@@ -23,6 +23,8 @@ defmodule Accountkit.Repo.Migrations.CreateSsoApplications do
       add :encrypted_linkedin_client_secret, :binary
       add :encrypted_client_token, :binary, null: false
       add :client_token_hash, :binary, null: false
+      add :archived_at, :utc_datetime_usec
+      add :deactivated_at, :utc_datetime_usec
 
       add :organization_id,
           references(:organizations,

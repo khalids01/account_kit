@@ -40,7 +40,9 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
      |> assign(:sidebar_collapsed?, false)
      |> assign(:platform_owner?, platform_owner?)
      |> assign(:selected_organization_id, "all")
+     |> assign(:modal_mode, nil)
      |> assign(:editing_application, nil)
+     |> assign(:viewing_application, nil)
      |> assign(:revealed_tokens, %{})
      |> load_organizations(user, platform_owner?)
      |> assign_forms()
@@ -68,43 +70,26 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
             </p>
           </div>
 
-          <form :if={@platform_owner?} phx-change="filter_organization" class="sm:w-72">
-            <label class="text-sm font-medium">Organization</label>
-            <select
-              name="organization_id"
-              class="select select-bordered mt-2 w-full"
-              value={@selected_organization_id}
-            >
-              <option value="all">All organizations</option>
-              <option :for={organization <- @organizations} value={organization.id}>
-                {organization.name}
-              </option>
-            </select>
-          </form>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <form :if={@platform_owner?} phx-change="filter_organization" class="sm:w-72">
+              <label class="text-sm font-medium">Organization</label>
+              <select
+                name="organization_id"
+                class="select select-bordered mt-2 w-full"
+                value={@selected_organization_id}
+              >
+                <option value="all">All organizations</option>
+                <option :for={organization <- @organizations} value={organization.id}>
+                  {organization.name}
+                </option>
+              </select>
+            </form>
+
+            <button type="button" phx-click="new_application" class="btn btn-primary">
+              Create
+            </button>
+          </div>
         </div>
-
-        <.application_form
-          id="create-application-form"
-          form={@create_form}
-          event="create_application"
-          title="Create application"
-          submit_label="Create application"
-          organizations={@organizations}
-          platform_owner?={@platform_owner?}
-          editing?={false}
-        />
-
-        <.application_form
-          :if={@editing_application}
-          id="edit-application-form"
-          form={@edit_form}
-          event="update_application"
-          title={"Edit #{@editing_application.name}"}
-          submit_label="Update application"
-          organizations={@organizations}
-          platform_owner?={false}
-          editing?={true}
-        />
 
         <div class="hidden overflow-x-auto rounded-2xl border border-base-300 bg-base-100 shadow-sm lg:block">
           <table class="w-full text-left text-sm">
@@ -112,9 +97,9 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
               <tr>
                 <th class="px-4 py-3 font-medium">Application</th>
                 <th class="px-4 py-3 font-medium">Organization</th>
+                <th class="px-4 py-3 font-medium">Status</th>
                 <th class="px-4 py-3 font-medium">Auth</th>
                 <th class="px-4 py-3 font-medium">Redirect URLs</th>
-                <th class="px-4 py-3 font-medium">Token</th>
                 <th class="px-4 py-3 font-medium"><span class="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -127,6 +112,7 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
                   </div>
                 </td>
                 <td class="px-4 py-3"><.org_badge organization={application.organization} /></td>
+                <td class="px-4 py-3"><.status_badges application={application} /></td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-1.5">
                     <.auth_badge label="Password" enabled={application.password_enabled} />
@@ -150,9 +136,6 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
                 </td>
                 <td class="max-w-xs px-4 py-3 text-base-content/70">
                   {Enum.join(application.redirect_urls, ", ")}
-                </td>
-                <td class="px-4 py-3">
-                  <.token_value token={Map.get(@revealed_tokens, application.id)} />
                 </td>
                 <td class="px-4 py-3 text-right">
                   <.application_actions application={application} />
@@ -183,6 +166,10 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
               <.org_badge organization={application.organization} />
             </div>
 
+            <div class="mt-3">
+              <.status_badges application={application} />
+            </div>
+
             <div class="mt-4 flex flex-wrap gap-1.5">
               <.auth_badge label="Password" enabled={application.password_enabled} />
               <.auth_badge label="Magic link" enabled={application.magic_link_enabled} />
@@ -208,12 +195,6 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
                 <dt class="text-xs uppercase tracking-wide text-base-content/50">Redirect URLs</dt>
                 <dd class="mt-1 font-medium">{Enum.join(application.redirect_urls, ", ")}</dd>
               </div>
-              <div>
-                <dt class="text-xs uppercase tracking-wide text-base-content/50">Token</dt>
-                <dd class="mt-1">
-                  <.token_value token={Map.get(@revealed_tokens, application.id)} />
-                </dd>
-              </div>
             </dl>
 
             <div class="mt-4">
@@ -228,6 +209,23 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
             No applications yet.
           </div>
         </div>
+
+        <.application_modal
+          :if={@modal_mode in [:create, :edit]}
+          mode={@modal_mode}
+          form={if @modal_mode == :create, do: @create_form, else: @edit_form}
+          event={if @modal_mode == :create, do: "create_application", else: "update_application"}
+          organizations={@organizations}
+          platform_owner?={@platform_owner? and @modal_mode == :create}
+          title={if @modal_mode == :create, do: "Create application", else: "Edit application"}
+          submit_label={if @modal_mode == :create, do: "Create application", else: "Save changes"}
+        />
+
+        <.application_details_modal
+          :if={@modal_mode == :view and @viewing_application}
+          application={@viewing_application}
+          token={Map.get(@revealed_tokens, @viewing_application.id)}
+        />
       </section>
     </DashboardLayout.dashboard_layout>
     """
@@ -245,6 +243,16 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
      |> load_applications(socket.assigns.current_user)}
   end
 
+  def handle_event("new_application", _params, socket) do
+    {:noreply,
+     assign(socket,
+       modal_mode: :create,
+       create_form: new_form(),
+       editing_application: nil,
+       viewing_application: nil
+     )}
+  end
+
   def handle_event("create_application", %{"application" => params}, socket) do
     user = socket.assigns.current_user
 
@@ -259,6 +267,7 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
        socket
        |> put_flash(:info, "Application created.")
        |> assign(:create_form, new_form())
+       |> assign(:modal_mode, nil)
        |> put_revealed_token(application.id, token)
        |> load_applications(user)}
     else
@@ -274,7 +283,9 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
       {:ok, application} ->
         {:noreply,
          socket
+         |> assign(:modal_mode, :edit)
          |> assign(:editing_application, application)
+         |> assign(:viewing_application, nil)
          |> assign(:edit_form, edit_form(application))}
 
       _error ->
@@ -283,7 +294,28 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
   end
 
   def handle_event("cancel_edit", _params, socket) do
-    {:noreply, assign(socket, editing_application: nil, edit_form: nil)}
+    {:noreply, close_modal(socket)}
+  end
+
+  def handle_event("close_modal", _params, socket) do
+    {:noreply, close_modal(socket)}
+  end
+
+  def handle_event("view_application", %{"id" => id}, socket) do
+    user = socket.assigns.current_user
+
+    case get_application(id, user) do
+      {:ok, application} ->
+        {:noreply,
+         assign(socket,
+           modal_mode: :view,
+           viewing_application: application,
+           editing_application: nil
+         )}
+
+      _error ->
+        {:noreply, put_flash(socket, :error, "Could not load application.")}
+    end
   end
 
   def handle_event("update_application", %{"application" => params}, socket) do
@@ -298,7 +330,7 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
       {:noreply,
        socket
        |> put_flash(:info, "Application updated.")
-       |> assign(editing_application: nil, edit_form: nil)
+       |> close_modal()
        |> load_applications(user)}
     else
       _error ->
@@ -338,6 +370,22 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     end
   end
 
+  def handle_event("archive_application", %{"id" => id}, socket) do
+    manage_application(socket, id, :archive, "Application archived.")
+  end
+
+  def handle_event("restore_application", %{"id" => id}, socket) do
+    manage_application(socket, id, :restore, "Application restored.")
+  end
+
+  def handle_event("deactivate_application", %{"id" => id}, socket) do
+    manage_application(socket, id, :deactivate, "Application deactivated.")
+  end
+
+  def handle_event("activate_application", %{"id" => id}, socket) do
+    manage_application(socket, id, :activate, "Application activated.")
+  end
+
   def handle_event("delete_application", %{"id" => id}, socket) do
     user = socket.assigns.current_user
 
@@ -354,95 +402,146 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     end
   end
 
-  attr :id, :string, required: true
+  defp manage_application(socket, id, action, success_message) do
+    user = socket.assigns.current_user
+
+    with {:ok, application} <- get_application(id, user),
+         {:ok, _application} <-
+           application
+           |> Ash.Changeset.for_update(action, %{}, actor: user)
+           |> Ash.update() do
+      {:noreply,
+       socket
+       |> put_flash(:info, success_message)
+       |> load_applications(user)}
+    else
+      _error ->
+        {:noreply, put_flash(socket, :error, "Could not update application.")}
+    end
+  end
+
+  defp close_modal(socket) do
+    assign(socket,
+      modal_mode: nil,
+      editing_application: nil,
+      viewing_application: nil,
+      edit_form: nil
+    )
+  end
+
   attr :form, Phoenix.HTML.Form, required: true
   attr :event, :string, required: true
   attr :title, :string, required: true
+  attr :mode, :atom, required: true
   attr :submit_label, :string, required: true
   attr :organizations, :list, required: true
   attr :platform_owner?, :boolean, required: true
-  attr :editing?, :boolean, required: true
+
+  defp application_modal(assigns) do
+    ~H"""
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+      <div class="mx-auto my-6 max-w-5xl rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <h3 class="text-base font-semibold">{@title}</h3>
+          <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+            Close
+          </button>
+        </div>
+
+        <.application_form
+          form={@form}
+          event={@event}
+          submit_label={@submit_label}
+          organizations={@organizations}
+          platform_owner?={@platform_owner?}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :form, Phoenix.HTML.Form, required: true
+  attr :event, :string, required: true
+  attr :submit_label, :string, required: true
+  attr :organizations, :list, required: true
+  attr :platform_owner?, :boolean, required: true
 
   defp application_form(assigns) do
     ~H"""
-    <section class="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
-      <div class="mb-4 flex items-center justify-between gap-3">
-        <h3 class="text-base font-semibold">{@title}</h3>
-        <button :if={@editing?} type="button" phx-click="cancel_edit" class="btn btn-ghost btn-sm">
-          Cancel
-        </button>
+    <.form
+      for={@form}
+      id={String.replace(@event, "_", "-") <> "-form"}
+      phx-submit={@event}
+      class="space-y-4"
+    >
+      <div class="grid gap-4 md:grid-cols-2">
+        <div :if={@platform_owner?}>
+          <label class="text-sm font-medium">Organization</label>
+          <select
+            name={@form[:organization_id].name}
+            value={@form[:organization_id].value}
+            required
+            class="select select-bordered mt-2 w-full"
+          >
+            <option value="">Choose organization</option>
+            <option :for={organization <- @organizations} value={organization.id}>
+              {organization.name}
+            </option>
+          </select>
+        </div>
+
+        <.text_input field={@form[:name]} label="Name" required />
+        <.text_input field={@form[:logo_url]} label="Logo URL" />
+        <.text_input field={@form[:email_from_name]} label="Email from name" />
+        <.text_input field={@form[:email_from_address]} label="Email from address" type="email" />
       </div>
 
-      <.form for={@form} id={@id} phx-submit={@event} class="space-y-4">
-        <div class="grid gap-4 md:grid-cols-2">
-          <div :if={@platform_owner?}>
-            <label class="text-sm font-medium">Organization</label>
-            <select
-              name={@form[:organization_id].name}
-              value={@form[:organization_id].value}
-              required
-              class="select select-bordered mt-2 w-full"
-            >
-              <option value="">Choose organization</option>
-              <option :for={organization <- @organizations} value={organization.id}>
-                {organization.name}
-              </option>
-            </select>
-          </div>
+      <div class="grid gap-4 md:grid-cols-2">
+        <.textarea_input field={@form[:allowed_origins]} label="Allowed origins" />
+        <.textarea_input field={@form[:redirect_urls]} label="Redirect URLs" required />
+      </div>
 
-          <.text_input field={@form[:name]} label="Name" required />
-          <.text_input field={@form[:logo_url]} label="Logo URL" />
-          <.text_input field={@form[:email_from_name]} label="Email from name" />
-          <.text_input field={@form[:email_from_address]} label="Email from address" type="email" />
-        </div>
+      <div class="grid gap-4 lg:grid-cols-3">
+        <.provider_panel
+          title="Core auth"
+          fields={[
+            {@form[:password_enabled], "Password"},
+            {@form[:magic_link_enabled], "Magic link"}
+          ]}
+        />
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <.textarea_input field={@form[:allowed_origins]} label="Allowed origins" />
-          <.textarea_input field={@form[:redirect_urls]} label="Redirect URLs" required />
-        </div>
+        <.oauth_panel
+          title="Google"
+          enabled={@form[:google_enabled]}
+          id_field={@form[:google_client_id]}
+          secret_field={@form[:google_client_secret]}
+          id_label="Google client ID"
+          secret_label="Google client secret"
+        />
 
-        <div class="grid gap-4 lg:grid-cols-3">
-          <.provider_panel
-            title="Core auth"
-            fields={[
-              {@form[:password_enabled], "Password"},
-              {@form[:magic_link_enabled], "Magic link"}
-            ]}
-          />
+        <.oauth_panel
+          title="Facebook"
+          enabled={@form[:facebook_enabled]}
+          id_field={@form[:facebook_app_id]}
+          secret_field={@form[:facebook_app_secret]}
+          id_label="Facebook app ID"
+          secret_label="Facebook app secret"
+        />
 
-          <.oauth_panel
-            title="Google"
-            enabled={@form[:google_enabled]}
-            id_field={@form[:google_client_id]}
-            secret_field={@form[:google_client_secret]}
-            id_label="Google client ID"
-            secret_label="Google client secret"
-          />
+        <.oauth_panel
+          title="LinkedIn"
+          enabled={@form[:linkedin_enabled]}
+          id_field={@form[:linkedin_client_id]}
+          secret_field={@form[:linkedin_client_secret]}
+          id_label="LinkedIn client ID"
+          secret_label="LinkedIn client secret"
+        />
+      </div>
 
-          <.oauth_panel
-            title="Facebook"
-            enabled={@form[:facebook_enabled]}
-            id_field={@form[:facebook_app_id]}
-            secret_field={@form[:facebook_app_secret]}
-            id_label="Facebook app ID"
-            secret_label="Facebook app secret"
-          />
-
-          <.oauth_panel
-            title="LinkedIn"
-            enabled={@form[:linkedin_enabled]}
-            id_field={@form[:linkedin_client_id]}
-            secret_field={@form[:linkedin_client_secret]}
-            id_label="LinkedIn client ID"
-            secret_label="LinkedIn client secret"
-          />
-        </div>
-
-        <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary">{@submit_label}</button>
-        </div>
-      </.form>
-    </section>
+      <div class="flex justify-end">
+        <button type="submit" class="btn btn-primary">{@submit_label}</button>
+      </div>
+    </.form>
     """
   end
 
@@ -558,6 +657,33 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     """
   end
 
+  attr :application, SsoApplication, required: true
+
+  defp status_badges(assigns) do
+    ~H"""
+    <div class="flex flex-wrap gap-1.5">
+      <span
+        :if={is_nil(@application.archived_at)}
+        class="inline-flex rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200"
+      >
+        Active
+      </span>
+      <span
+        :if={!is_nil(@application.archived_at)}
+        class="inline-flex rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:border-zinc-500/50 dark:bg-zinc-500/10 dark:text-zinc-200"
+      >
+        Archived
+      </span>
+      <span
+        :if={!is_nil(@application.deactivated_at)}
+        class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200"
+      >
+        Deactivated
+      </span>
+    </div>
+    """
+  end
+
   attr :label, :string, required: true
   attr :enabled, :boolean, required: true
   attr :configured, :boolean, default: true
@@ -596,6 +722,14 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
     <div class="flex flex-wrap justify-end gap-2">
       <button
         type="button"
+        phx-click="view_application"
+        phx-value-id={@application.id}
+        class="btn btn-ghost btn-xs"
+      >
+        View
+      </button>
+      <button
+        type="button"
         phx-click="edit_application"
         phx-value-id={@application.id}
         class="btn btn-ghost btn-xs"
@@ -604,28 +738,120 @@ defmodule AccountkitWeb.Pages.Dashboard.ApplicationsLive do
       </button>
       <button
         type="button"
-        phx-click="reveal_token"
+        phx-click={
+          if is_nil(@application.archived_at), do: "archive_application", else: "restore_application"
+        }
         phx-value-id={@application.id}
         class="btn btn-ghost btn-xs"
       >
-        Reveal token
+        {if is_nil(@application.archived_at), do: "Archive", else: "Restore"}
       </button>
       <button
         type="button"
-        phx-click="rotate_token"
+        phx-click={
+          if is_nil(@application.deactivated_at),
+            do: "deactivate_application",
+            else: "activate_application"
+        }
         phx-value-id={@application.id}
         class="btn btn-warning btn-xs"
       >
-        Rotate token
+        {if is_nil(@application.deactivated_at), do: "Deactivate", else: "Activate"}
       </button>
-      <button
-        type="button"
-        phx-click="delete_application"
-        phx-value-id={@application.id}
-        class="btn btn-error btn-xs"
-      >
-        Delete
-      </button>
+    </div>
+    """
+  end
+
+  attr :application, SsoApplication, required: true
+  attr :token, :string, default: nil
+
+  defp application_details_modal(assigns) do
+    ~H"""
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+      <div class="mx-auto my-6 max-w-3xl rounded-2xl border border-base-300 bg-base-100 p-4 shadow-xl">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-semibold">{@application.name}</h3>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <.org_badge organization={@application.organization} />
+              <.status_badges application={@application} />
+            </div>
+          </div>
+          <button type="button" phx-click="close_modal" class="btn btn-ghost btn-sm">
+            Close
+          </button>
+        </div>
+
+        <dl class="grid gap-4 text-sm md:grid-cols-2">
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-base-content/50">Logo URL</dt>
+            <dd class="mt-1 font-medium">{@application.logo_url || "None"}</dd>
+          </div>
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-base-content/50">Email from</dt>
+            <dd class="mt-1 font-medium">
+              {[@application.email_from_name, @application.email_from_address]
+              |> Enum.reject(&is_nil/1)
+              |> Enum.join(" ")}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-base-content/50">Allowed origins</dt>
+            <dd class="mt-1 font-medium">{Enum.join(@application.allowed_origins, ", ")}</dd>
+          </div>
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-base-content/50">Redirect URLs</dt>
+            <dd class="mt-1 font-medium">{Enum.join(@application.redirect_urls, ", ")}</dd>
+          </div>
+          <div class="md:col-span-2">
+            <dt class="text-xs uppercase tracking-wide text-base-content/50">Auth methods</dt>
+            <dd class="mt-2 flex flex-wrap gap-1.5">
+              <.auth_badge label="Password" enabled={@application.password_enabled} />
+              <.auth_badge label="Magic link" enabled={@application.magic_link_enabled} />
+              <.auth_badge
+                label="Google"
+                enabled={@application.google_enabled}
+                configured={present?(@application.google_client_id)}
+              />
+              <.auth_badge
+                label="Facebook"
+                enabled={@application.facebook_enabled}
+                configured={present?(@application.facebook_app_id)}
+              />
+              <.auth_badge
+                label="LinkedIn"
+                enabled={@application.linkedin_enabled}
+                configured={present?(@application.linkedin_client_id)}
+              />
+            </dd>
+          </div>
+          <div class="md:col-span-2">
+            <dt class="text-xs uppercase tracking-wide text-base-content/50">Client token</dt>
+            <dd class="mt-2">
+              <.token_value token={@token} />
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-5 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            phx-click="reveal_token"
+            phx-value-id={@application.id}
+            class="btn btn-ghost btn-sm"
+          >
+            Reveal token
+          </button>
+          <button
+            type="button"
+            phx-click="rotate_token"
+            phx-value-id={@application.id}
+            class="btn btn-warning btn-sm"
+          >
+            Rotate token
+          </button>
+        </div>
+      </div>
     </div>
     """
   end
