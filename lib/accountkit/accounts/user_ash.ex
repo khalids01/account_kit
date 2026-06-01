@@ -153,6 +153,10 @@ defmodule Accountkit.Accounts.User do
     create :register_with_password do
       description "Register a new user with a email and password."
 
+      argument :name, :string do
+        allow_nil? true
+      end
+
       argument :email, :ci_string do
         allow_nil? false
       end
@@ -172,6 +176,7 @@ defmodule Accountkit.Accounts.User do
 
       # Sets the email from the argument
       change set_attribute(:email, arg(:email))
+      change set_attribute(:name, arg(:name))
 
       # Hashes the provided password
       change AshAuthentication.Strategy.Password.HashPasswordChange

@@ -63,6 +63,21 @@ defmodule AccountkitWeb.Router do
     forward "/", AccountkitWeb.AshJsonApiRouter
   end
 
+  scope "/api", AccountkitWeb do
+    pipe_through [:api]
+
+    options "/auth/validate-client", SsoAuthController, :options
+    post "/auth/validate-client", SsoAuthController, :validate_client
+    get "/auth/client-info", SsoAuthController, :client_info
+
+    options "/rest/auth/login", SsoAuthController, :options
+    options "/rest/auth/register", SsoAuthController, :options
+    options "/rest/auth/user", SsoAuthController, :options
+    post "/rest/auth/login", SsoAuthController, :login
+    post "/rest/auth/register", SsoAuthController, :register
+    get "/rest/auth/user", SsoAuthController, :user
+  end
+
   scope "/", AccountkitWeb do
     pipe_through :browser
 
