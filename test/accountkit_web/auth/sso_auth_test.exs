@@ -3,8 +3,8 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
 
   import Phoenix.LiveViewTest
 
-  alias Accountkit.Accounts.{Organization, SsoApplication, User}
-  alias Accountkit.Sso
+  alias Accountkit.Accounts.{EndUser, Organization, SsoApplication}
+  alias AccountkitWeb.Features.ApplicationSso.Clients
 
   describe "client validation" do
     test "valid client token and redirect URL succeeds", %{conn: conn} do
@@ -99,7 +99,7 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
   describe "callback URLs" do
     test "preserves existing params and prevents passthrough auth_token override" do
       url =
-        Sso.callback_url(
+        Clients.callback_url(
           "http://localhost:5173/callback?existing=kept",
           "auth_token=bad&campaign=sso",
           "good-token"
@@ -115,7 +115,7 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
   describe "REST auth" do
     test "login returns legacy-compatible token, user, and client", %{conn: conn} do
       %{token: token} = sso_application!()
-      user!("login@example.com", "Login User", "password123")
+      end_user!("login@example.com", "Login User", "password123", application_for_token(token))
 
       conn =
         post(conn, "/api/rest/auth/login", %{
@@ -159,7 +159,13 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
 
     test "user endpoint accepts bearer tokens and rejects missing tokens", %{conn: conn} do
       %{token: token} = sso_application!()
-      user!("profile@example.com", "Profile User", "password123")
+
+      end_user!(
+        "profile@example.com",
+        "Profile User",
+        "password123",
+        application_for_token(token)
+      )
 
       login_conn =
         post(conn, "/api/rest/auth/login", %{
@@ -203,13 +209,13 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       %{token: token} = sso_application!()
       query = URI.encode_query(%{token: token, redirect_url: "http://localhost:5173/callback"})
 
-      {:ok, _view, login_html} = live(conn, "/login?#{query}")
+      {:ok, _view, login_html} = live(conn, "/sso/login?#{query}")
 
       assert login_html =~ "Test App"
       assert login_html =~ "Sign in to your account"
       assert login_html =~ "type=\"password\""
 
-      {:ok, _view, register_html} = live(conn, "/register?#{query}")
+      {:ok, _view, register_html} = live(conn, "/sso/register?#{query}")
 
       assert register_html =~ "Test App"
       assert register_html =~ "Create account"
@@ -241,11 +247,12 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
     %{application: application, token: application.client_token}
   end
 
-  defp user!(email, name, password) do
-    User
+  defp end_user!(email, name, password, application) do
+    EndUser
     |> Ash.Changeset.for_create(
       :register_with_password,
       %{
+        sso_application_id: application.id,
         name: name,
         email: email,
         password: password,
@@ -254,5 +261,15 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       authorize?: false
     )
     |> Ash.create!()
+  end
+
+  defp application_for_token(token) do
+    SsoApplication
+    |> Ash.Query.for_read(
+      :get_by_client_token_hash,
+      %{client_token_hash: SsoApplication.hash_token(token)},
+      authorize?: false
+    )
+    |> Ash.read_one!()
   end
 end

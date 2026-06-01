@@ -1,8 +1,8 @@
 defmodule AccountkitWeb.SsoAuthController do
   use AccountkitWeb, :controller
 
-  alias Accountkit.Accounts.User
-  alias Accountkit.Sso
+  alias Accountkit.Accounts.EndUser
+  alias AccountkitWeb.Features.ApplicationSso.{Auth, Clients}
 
   def options(conn, _params) do
     conn
@@ -12,7 +12,7 @@ defmodule AccountkitWeb.SsoAuthController do
 
   def validate_client(conn, params) do
     with {:ok, _application} <-
-           Sso.validate_client(params["token"], params["redirectUrl"], params["clientOrigin"]) do
+           Clients.validate_client(params["token"], params["redirectUrl"], params["clientOrigin"]) do
       conn
       |> put_cors_headers()
       |> json(%{success: true})
@@ -22,11 +22,11 @@ defmodule AccountkitWeb.SsoAuthController do
   end
 
   def client_info(conn, %{"token" => token}) do
-    with {:ok, application} <- Sso.get_application_by_token(token),
-         :ok <- Sso.ensure_active(application) do
+    with {:ok, application} <- Clients.get_application_by_token(token),
+         :ok <- Clients.ensure_active(application) do
       conn
       |> put_cors_headers()
-      |> json(Sso.public_client(application))
+      |> json(Clients.public_client(application))
     else
       {:error, reason} -> legacy_error(conn, reason, simple?: true)
     end
@@ -38,8 +38,8 @@ defmodule AccountkitWeb.SsoAuthController do
     with :ok <- require_param(params, "email", :missing_email),
          :ok <- require_param(params, "password", :missing_password),
          {:ok, application} <- validate_password_client(params),
-         {:ok, user} <- sign_in(params) do
-      auth_success(conn, user, application)
+         {:ok, end_user} <- Auth.sign_in(application, params) do
+      auth_success(conn, end_user, application)
     else
       {:error, reason} -> legacy_error(conn, reason)
     end
@@ -51,19 +51,19 @@ defmodule AccountkitWeb.SsoAuthController do
          :ok <- require_param(params, "password", :missing_password),
          :ok <- validate_password_length(params["password"]),
          {:ok, application} <- validate_password_client(params),
-         {:ok, user} <- register_user(params) do
-      auth_success(conn, user, application)
+         {:ok, end_user} <- Auth.register(application, params) do
+      auth_success(conn, end_user, application)
     else
       {:error, reason} -> legacy_error(conn, reason)
     end
   end
 
   def user(conn, _params) do
-    case conn.assigns[:current_user] do
-      %User{} = user ->
+    case conn.assigns[:current_end_user] do
+      %EndUser{} = end_user ->
         conn
         |> put_cors_headers()
-        |> json(%{success: true, user: user_json(user)})
+        |> json(%{success: true, user: Auth.user_json(end_user)})
 
       _user ->
         legacy_error(conn, :invalid_token)
@@ -71,7 +71,7 @@ defmodule AccountkitWeb.SsoAuthController do
   end
 
   defp validate_password_client(params) do
-    with {:ok, application} <- Sso.validate_client(params["token"], params["redirectUrl"]) do
+    with {:ok, application} <- Clients.validate_client(params["token"], params["redirectUrl"]) do
       if application.password_enabled do
         {:ok, application}
       else
@@ -80,68 +80,15 @@ defmodule AccountkitWeb.SsoAuthController do
     end
   end
 
-  defp sign_in(params) do
-    User
-    |> Ash.Query.for_read(
-      :sign_in_with_password,
-      %{email: params["email"], password: params["password"]},
-      authorize?: false
-    )
-    |> Ash.read_one()
-    |> case do
-      {:ok, %User{} = user} -> {:ok, user}
-      {:ok, nil} -> {:error, :invalid_credentials}
-      {:error, _error} -> {:error, :invalid_credentials}
-    end
-  end
-
-  defp register_user(params) do
-    User
-    |> Ash.Changeset.for_create(
-      :register_with_password,
-      %{
-        name: params["name"],
-        email: params["email"],
-        password: params["password"],
-        password_confirmation: params["password"]
-      },
-      authorize?: false
-    )
-    |> Ash.create()
-    |> case do
-      {:ok, %User{} = user} -> {:ok, user}
-      {:error, error} -> {:error, classify_register_error(error)}
-    end
-  end
-
-  defp auth_success(conn, user, application) do
+  defp auth_success(conn, end_user, application) do
     conn
     |> put_cors_headers()
     |> json(%{
       success: true,
-      token: user.__metadata__.token,
-      user: user_json(user),
-      client: client_json(application)
+      token: end_user.__metadata__.token,
+      user: Auth.user_json(end_user),
+      client: Auth.client_json(application)
     })
-  end
-
-  defp user_json(%User{} = user) do
-    %{
-      id: user.id,
-      name: user.name,
-      email: to_string(user.email),
-      profileImageUrl: nil,
-      authProvider: nil,
-      createdAt: Map.get(user, :created_at)
-    }
-  end
-
-  defp client_json(application) do
-    %{
-      id: application.id,
-      name: application.name,
-      logoUrl: application.logo_url
-    }
   end
 
   defp require_param(params, key, reason) do
@@ -155,19 +102,6 @@ defmodule AccountkitWeb.SsoAuthController do
     do: :ok
 
   defp validate_password_length(_password), do: {:error, :password_too_short}
-
-  defp classify_register_error(error) do
-    message = Exception.message(error)
-
-    cond do
-      String.contains?(message, "unique_email") or
-          String.contains?(message, "has already been taken") ->
-        :email_exists
-
-      true ->
-        :server_error
-    end
-  end
 
   defp legacy_error(conn, :missing_email, _opts) do
     json_error(conn, 400, "Email is required", "MISSING_EMAIL")
@@ -189,10 +123,15 @@ defmodule AccountkitWeb.SsoAuthController do
     if Keyword.get(opts, :simple?, false) do
       conn
       |> put_cors_headers()
-      |> put_status(Sso.status(reason))
-      |> json(%{error: Sso.error_message(reason)})
+      |> put_status(Clients.status(reason))
+      |> json(%{error: Clients.error_message(reason)})
     else
-      json_error(conn, Sso.status(reason), Sso.error_message(reason), Sso.error_code(reason))
+      json_error(
+        conn,
+        Clients.status(reason),
+        Clients.error_message(reason),
+        Clients.error_code(reason)
+      )
     end
   end
 

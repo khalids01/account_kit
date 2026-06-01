@@ -8,6 +8,8 @@ defmodule Accountkit.Accounts do
   resources do
     resource Accountkit.Accounts.Token
     resource Accountkit.Accounts.User
+    resource Accountkit.Accounts.EndUserToken
+    resource Accountkit.Accounts.EndUser
     resource Accountkit.Accounts.ApiKey
     resource Accountkit.Accounts.Organization
     resource Accountkit.Accounts.OrganizationMembership

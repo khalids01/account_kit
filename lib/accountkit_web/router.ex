@@ -31,6 +31,9 @@ defmodule AccountkitWeb.Router do
   scope "/", AccountkitWeb do
     pipe_through :browser
 
+    live "/sso/login", Pages.ApplicationSso.LoginLive, :new
+    live "/sso/register", Pages.ApplicationSso.RegisterLive, :new
+
     ash_authentication_live_session :authenticated_routes,
       on_mount: [
         {AccountkitWeb.LiveUserAuth, :assign_client_ip},

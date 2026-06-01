@@ -21,11 +21,11 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "email",
-      "type": "citext"
+      "source": "name",
+      "type": "text"
     },
     {
-      "allow_nil?": true,
+      "allow_nil?": false,
       "default": "nil",
       "generated?": false,
       "precision": null,
@@ -33,8 +33,20 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "name",
-      "type": "text"
+      "source": "email",
+      "type": "citext"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "login_id",
+      "type": "citext"
     },
     {
       "allow_nil?": true,
@@ -69,20 +81,63 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "banned_at",
+      "source": "archived_at",
       "type": "utc_datetime_usec"
     },
     {
-      "allow_nil?": true,
-      "default": "nil",
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "archived_at",
+      "source": "created_at",
       "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "updated_at",
+      "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "end_users_sso_application_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "sso_applications"
+      },
+      "scale": null,
+      "size": null,
+      "source": "sso_application_id",
+      "type": "uuid"
     }
   ],
   "base_filter": null,
@@ -91,19 +146,37 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "7DBAD3B94AC505EED75319938B4A46CE1CDD5BA0BDAC38FCBD9C0224AF977B0F",
+  "hash": "E47EB6A93A7E40E02168498CF8B054FA47272B6E6658C2710DDF487423A6028A",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "users_unique_email_index",
+      "index_name": "end_users_unique_email_per_application_index",
       "keys": [
+        {
+          "type": "atom",
+          "value": "sso_application_id"
+        },
         {
           "type": "atom",
           "value": "email"
         }
       ],
-      "name": "unique_email",
+      "name": "unique_email_per_application",
+      "nils_distinct?": true,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "end_users_unique_login_id_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "login_id"
+        }
+      ],
+      "name": "unique_login_id",
       "nils_distinct?": true,
       "where": null
     }
@@ -115,5 +188,5 @@
   },
   "repo": "Elixir.Accountkit.Repo",
   "schema": null,
-  "table": "users"
+  "table": "end_users"
 }

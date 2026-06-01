@@ -1,13 +1,11 @@
-defmodule Accountkit.Sso do
+defmodule AccountkitWeb.Features.ApplicationSso.Clients do
   @moduledoc """
-  Runtime helpers for legacy-compatible SSO client validation and callbacks.
+  Legacy-compatible SSO client validation and callback helpers.
   """
 
   alias Accountkit.Accounts.SsoApplication
 
   require Ash.Query
-
-  @type validation_result :: {:ok, SsoApplication.t()} | {:error, atom()}
 
   def validate_client(token, redirect_url, client_origin \\ nil) do
     with {:ok, application} <- get_application_by_token(token),
