@@ -9,4 +9,13 @@ defmodule Accountkit.Secrets do
       ) do
     Application.fetch_env(:accountkit, :token_signing_secret)
   end
+
+  def secret_for(
+        [:authentication, :tokens, :signing_secret],
+        Accountkit.Accounts.EndUser,
+        _opts,
+        _context
+      ) do
+    Application.fetch_env(:accountkit, :token_signing_secret)
+  end
 end
