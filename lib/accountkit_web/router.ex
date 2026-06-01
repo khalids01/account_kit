@@ -63,6 +63,8 @@ defmodule AccountkitWeb.Router do
       spec_href: "/api/json/open_api",
       title: "Accountkit API"
 
+    get "/open_api", AccountkitWeb.OpenApiController, :show
+
     forward "/", AccountkitWeb.AshJsonApiRouter
   end
 
