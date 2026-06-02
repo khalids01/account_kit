@@ -105,9 +105,12 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
           "good-token"
         )
 
-      assert url =~ "existing=kept"
-      assert url =~ "campaign=sso"
-      assert url =~ "auth_token=good-token"
+      query = URI.parse(url).query |> URI.decode_query()
+
+      assert query["existing"] == "kept"
+      assert query["campaign"] == "sso"
+      assert query["auth_token"] == "good-token"
+      assert query["expires_in"] == "0"
       refute url =~ "auth_token=bad"
     end
   end
@@ -128,11 +131,14 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       assert %{
                "success" => true,
                "token" => auth_token,
+               "expires_in" => expires_in,
                "user" => %{"email" => "login@example.com", "name" => "Login User"},
                "client" => %{"name" => "Test App"}
              } = json_response(conn, 200)
 
       assert is_binary(auth_token)
+      assert is_integer(expires_in)
+      assert expires_in > 0
     end
 
     test "register creates a user and returns the same response shape", %{conn: conn} do
@@ -150,11 +156,14 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       assert %{
                "success" => true,
                "token" => auth_token,
+               "expires_in" => expires_in,
                "user" => %{"email" => "register@example.com", "name" => "Register User"},
                "client" => %{"name" => "Test App"}
              } = json_response(conn, 200)
 
       assert is_binary(auth_token)
+      assert is_integer(expires_in)
+      assert expires_in > 0
     end
 
     test "user endpoint accepts bearer tokens and rejects missing tokens", %{conn: conn} do

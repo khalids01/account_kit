@@ -98,11 +98,14 @@ defmodule AccountkitWeb.SsoAuthController do
   end
 
   defp auth_success(conn, end_user, application) do
+    token = end_user.__metadata__.token
+
     conn
     |> put_cors_headers()
     |> json(%{
       success: true,
-      token: end_user.__metadata__.token,
+      token: token,
+      expires_in: Clients.token_expires_in(token),
       user: Auth.user_json(end_user),
       client: Auth.client_json(application)
     })

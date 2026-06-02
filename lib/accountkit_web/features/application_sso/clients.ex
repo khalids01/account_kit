@@ -82,11 +82,25 @@ defmodule AccountkitWeb.Features.ApplicationSso.Clients do
   end
 
   def callback_url(redirect_url, callback_params, auth_token) do
+    expires_in = token_expires_in(auth_token)
+
     redirect_url
     |> URI.parse()
-    |> merge_query(callback_params, auth_token)
+    |> merge_query(callback_params, auth_token, expires_in)
     |> URI.to_string()
   end
+
+  def token_expires_in(token) when is_binary(token) do
+    with {:ok, %{"exp" => exp}} when is_integer(exp) <- Joken.peek_claims(token) do
+      now = DateTime.utc_now() |> DateTime.to_unix()
+
+      max(exp - now, 0)
+    else
+      _error -> 0
+    end
+  end
+
+  def token_expires_in(_token), do: 0
 
   def error_message(:missing_token), do: "Client token is required"
   def error_message(:missing_redirect_url), do: "Redirect URL is required"
@@ -142,12 +156,13 @@ defmodule AccountkitWeb.Features.ApplicationSso.Clients do
 
   defp origin_allowed?(_origin, _allowed_origin), do: false
 
-  defp merge_query(%URI{} = uri, callback_params, auth_token) do
+  defp merge_query(%URI{} = uri, callback_params, auth_token, expires_in) do
     query =
       uri.query
       |> decode_query()
       |> Map.merge(decode_callback_params(callback_params))
       |> Map.put("auth_token", auth_token)
+      |> Map.put("expires_in", expires_in)
 
     %{uri | query: URI.encode_query(query)}
   end

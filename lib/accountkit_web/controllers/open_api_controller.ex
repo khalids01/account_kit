@@ -221,10 +221,15 @@ defmodule AccountkitWeb.OpenApiController do
       },
       AuthSuccessResponse: %{
         type: "object",
-        required: ["success", "token", "user", "client"],
+        required: ["success", "token", "expires_in", "user", "client"],
         properties: %{
           success: %{type: "boolean", example: true},
           token: string("Application end-user JWT."),
+          expires_in: %{
+            type: "integer",
+            description: "Remaining token lifetime in seconds.",
+            example: 1_209_600
+          },
           user: ref("#/components/schemas/EndUser"),
           client: ref("#/components/schemas/PublicClient")
         }
