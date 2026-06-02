@@ -65,6 +65,16 @@ defmodule Accountkit.Accounts.Authorization do
 
   def first_org_membership(_user), do: nil
 
+  def org_admin_organization_ids(%{id: user_id}) when not is_nil(user_id) do
+    OrganizationMembership
+    |> Ash.Query.for_read(:for_user, %{user_id: user_id}, authorize?: false)
+    |> Ash.read!()
+    |> Enum.filter(&(&1.role == :org_admin))
+    |> Enum.map(& &1.organization_id)
+  end
+
+  def org_admin_organization_ids(_user), do: []
+
   defp org_membership_exists?(user_id) do
     OrganizationMembership
     |> Ash.Query.for_read(:for_user, %{user_id: user_id}, authorize?: false)

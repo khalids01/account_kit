@@ -49,6 +49,8 @@ defmodule AccountkitWeb.Features.ApplicationSso.Auth do
       id: end_user.id,
       name: end_user.name,
       email: to_string(end_user.email),
+      phone: end_user.phone,
+      authMethods: end_user.auth_methods,
       profileImageUrl: nil,
       authProvider: nil,
       ssoApplicationId: end_user.sso_application_id,

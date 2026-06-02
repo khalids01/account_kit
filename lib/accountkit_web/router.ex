@@ -153,6 +153,7 @@ defmodule AccountkitWeb.Router do
       live "/dashboard/applications", Pages.Dashboard.ApplicationsLive, :index
       live "/dashboard/organizations", Pages.Dashboard.OrganizationsLive, :index
       live "/dashboard/users", Pages.Dashboard.UsersLive, :index
+      live "/dashboard/end-users", Pages.Dashboard.EndUsersLive, :index
       live "/dashboard/api-keys", Pages.Dashboard.ApiKeysLive, :index
       live "/dashboard/settings", Pages.Dashboard.SettingsLive, :index
     end

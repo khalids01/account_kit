@@ -230,7 +230,14 @@ defmodule AccountkitWeb.OpenApiController do
         properties: %{
           id: string("Application end-user id.", "0a0f85e5-5a10-4be6-b039-0a23b531df24"),
           name: string("End-user display name.", "End User"),
-          email: string("End-user email address.", "end.user@example.com")
+          email: string("End-user email address.", "end.user@example.com"),
+          phone: nullable_string("Optional end-user phone number."),
+          authMethods: %{
+            type: "array",
+            description: "Authentication methods used by this end user.",
+            items: %{type: "string"},
+            example: ["password"]
+          }
         }
       },
       PublicClient: %{

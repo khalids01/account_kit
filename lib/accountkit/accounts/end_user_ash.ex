@@ -28,10 +28,16 @@ defmodule Accountkit.Accounts.EndUser do
   postgres do
     table "end_users"
     repo Accountkit.Repo
+    migration_defaults auth_methods: ~s(["password"])
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
+
+    read :get_by_id do
+      description "Get an application end user by id."
+      get_by :id
+    end
 
     read :get_by_subject do
       description "Get an application end user by the subject claim in a JWT"
@@ -58,7 +64,10 @@ defmodule Accountkit.Accounts.EndUser do
         sensitive? true
       end
 
-      filter expr(sso_application_id == ^arg(:sso_application_id))
+      filter expr(
+               sso_application_id == ^arg(:sso_application_id) and is_nil(banned_at) and
+                 is_nil(archived_at)
+             )
 
       prepare AshAuthentication.Strategy.Password.SignInPreparation
 
@@ -97,6 +106,7 @@ defmodule Accountkit.Accounts.EndUser do
       change set_attribute(:sso_application_id, arg(:sso_application_id))
       change set_attribute(:name, arg(:name))
       change set_attribute(:email, arg(:email))
+      change set_attribute(:auth_methods, ["password"])
       change &set_login_id/2
       change AshAuthentication.Strategy.Password.HashPasswordChange
       change AshAuthentication.GenerateTokenChange
@@ -108,6 +118,38 @@ defmodule Accountkit.Accounts.EndUser do
         allow_nil? false
       end
     end
+
+    update :update_profile do
+      accept [:name, :phone]
+    end
+
+    update :ban do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :banned_at, DateTime.utc_now())
+      end
+    end
+
+    update :unban do
+      accept []
+      change set_attribute(:banned_at, nil)
+    end
+
+    update :archive do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :archived_at, DateTime.utc_now())
+      end
+    end
+
+    update :restore do
+      accept []
+      change set_attribute(:archived_at, nil)
+    end
   end
 
   policies do
@@ -117,6 +159,25 @@ defmodule Accountkit.Accounts.EndUser do
 
     policy action_type(:read) do
       authorize_if expr(id == ^actor(:id))
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+
+      authorize_if expr(
+                     exists(
+                       sso_application.organization.memberships,
+                       user_id == ^actor(:id) and role == :org_admin
+                     )
+                   )
+    end
+
+    policy action_type([:update, :destroy]) do
+      authorize_if Accountkit.Accounts.Checks.PlatformOwner
+
+      authorize_if expr(
+                     exists(
+                       sso_application.organization.memberships,
+                       user_id == ^actor(:id) and role == :org_admin
+                     )
+                   )
     end
   end
 
@@ -134,6 +195,11 @@ defmodule Accountkit.Accounts.EndUser do
       public? true
     end
 
+    attribute :phone, :string do
+      public? true
+      constraints trim?: true
+    end
+
     attribute :login_id, :ci_string do
       allow_nil? false
       public? true
@@ -146,7 +212,17 @@ defmodule Accountkit.Accounts.EndUser do
 
     attribute :confirmed_at, :utc_datetime_usec
 
+    attribute :banned_at, :utc_datetime_usec do
+      public? true
+    end
+
     attribute :archived_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :auth_methods, {:array, :string} do
+      allow_nil? false
+      default ["password"]
       public? true
     end
 
