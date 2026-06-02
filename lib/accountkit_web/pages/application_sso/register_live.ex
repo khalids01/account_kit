@@ -45,9 +45,8 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
           placeholder="you@example.com"
         />
 
-        <.input
+        <.password_input
           field={@form[:password]}
-          type="password"
           label="Password"
           autocomplete="new-password"
           required
