@@ -12,7 +12,7 @@ defmodule AccountkitWeb.OpenApiController do
         title: "AccountKit API",
         version: "0.1.0",
         description:
-          "Legacy-compatible Application SSO APIs. AccountKit control-plane authentication is intentionally separate from application end-user SSO authentication."
+          "Legacy-compatible Application SSO APIs. AccountKit control-plane authentication is intentionally separate from application end-user SSO authentication. See /docs/sso for the integration guide."
       },
       servers: [
         %{url: "/api", description: "AccountKit API"}
@@ -99,24 +99,6 @@ defmodule AccountkitWeb.OpenApiController do
         },
         options: preflight_operation()
       },
-      "/rest/auth/user" => %{
-        get: %{
-          tags: ["Application SSO Auth"],
-          summary: "Get the authenticated application end user",
-          operationId: "getApplicationEndUser",
-          security: [%{bearerAuth: []}],
-          responses: %{
-            "200" =>
-              json_response("Authenticated end-user profile", "#/components/schemas/UserResponse"),
-            "401" =>
-              json_response(
-                "Missing, invalid, or non-end-user token",
-                "#/components/schemas/ErrorResponse"
-              )
-          }
-        },
-        options: preflight_operation()
-      },
       "/rest/auth/me" => %{
         get: %{
           tags: ["Application SSO Auth"],
@@ -164,7 +146,7 @@ defmodule AccountkitWeb.OpenApiController do
           scheme: "bearer",
           bearerFormat: "JWT",
           description:
-            "Application end-user JWT returned by /api/rest/auth/login or /api/rest/auth/register."
+            "Application end-user JWT from POST /api/rest/auth/login, POST /api/rest/auth/register, or the auth_token query parameter after SSO redirect."
         }
       },
       schemas: schemas()

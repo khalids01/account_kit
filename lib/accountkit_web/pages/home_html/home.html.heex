@@ -41,6 +41,9 @@
           <p class="mt-3 text-sm leading-6 text-base-content/70">
             Password, magic link, and API key flows designed to live inside a Phoenix/Ash application.
           </p>
+          <a href={~p"/docs/sso"} class="link link-primary mt-4 inline-block text-sm font-medium">
+            Application SSO integration guide →
+          </a>
         </article>
 
         <article class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
@@ -63,7 +66,12 @@
   <footer class="border-t border-base-300 px-6 py-8">
     <div class="mx-auto flex max-w-6xl flex-col gap-3 text-sm text-base-content/60 sm:flex-row sm:items-center sm:justify-between">
       <p>AccountKit</p>
-      <p>Open-source account infrastructure for SaaS builders.</p>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <a href={~p"/docs/sso"} class="link link-hover">
+          Application SSO docs
+        </a>
+        <p>Open-source account infrastructure for SaaS builders.</p>
+      </div>
     </div>
   </footer>
 </Layouts.home>

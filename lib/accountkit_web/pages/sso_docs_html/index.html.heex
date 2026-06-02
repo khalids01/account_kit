@@ -1,0 +1,171 @@
+<.docs_shell page_title={@page_title}>
+  <header class="mb-12">
+    <p class="text-sm font-semibold uppercase tracking-wide text-primary">Integration guide</p>
+    <h1 class="mt-2 text-4xl font-bold tracking-tight">Application SSO</h1>
+    <p class="mt-4 text-lg leading-8 text-base-content/70">
+      Add sign in and registration to your app without building auth UI or storing passwords.
+      AccountKit hosts the login experience and returns a JWT your app can use for API calls.
+    </p>
+  </header>
+
+  <div class="space-y-12">
+    <.doc_section id="overview" title="Overview">
+      <p>
+        Application SSO is designed for client apps (web, mobile, or backend) that need their own
+        end users, separate from AccountKit dashboard users.
+      </p>
+      <p>
+        Your app redirects users to AccountKit for login or registration. After success, AccountKit
+        sends the user back to your callback URL with a short-lived JWT in the query string. You store
+        that token and use it as a Bearer token when calling AccountKit SSO APIs.
+      </p>
+      <ol class="list-decimal space-y-2 pl-5">
+        <li>User clicks “Sign in” in your app</li>
+        <li>Browser opens AccountKit <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">/sso/login</code></li>
+        <li>AccountKit redirects to your callback with <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">auth_token</code></li>
+        <li>Your app saves the token and calls <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">GET /api/rest/auth/me</code></li>
+      </ol>
+    </.doc_section>
+
+    <.doc_section id="setup" title="Setup">
+      <p>
+        In the AccountKit dashboard, create an SSO application and configure:
+      </p>
+      <ul class="list-disc space-y-2 pl-5">
+        <li>
+          <strong>Redirect URLs</strong> — exact callback URLs AccountKit may redirect to after login
+          (for example <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">https://app.example.com/auth/callback</code>)
+        </li>
+        <li>
+          <strong>Allowed origins</strong> — browser origins allowed to call SSO REST APIs with CORS
+        </li>
+        <li>
+          <strong>Client token</strong> — copy this secret; your app sends it when starting SSO
+        </li>
+      </ul>
+      <p>
+        Keep the client token on your server or in secure app config. It identifies your application,
+        not an individual user.
+      </p>
+    </.doc_section>
+
+    <.doc_section id="redirect-flow" title="Redirect flow">
+      <p>
+        Send users to AccountKit with your client token and callback URL:
+      </p>
+      <.code_block code={
+        "GET /sso/login?token={client_token}&redirect_url={callback_url}&callback_params={optional}\n\nGET /sso/register?token={client_token}&redirect_url={callback_url}&callback_params={optional}"
+      } />
+      <p>
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">redirect_url</code>
+        must match one of the redirect URLs registered on your SSO application.
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">callback_params</code>
+        is optional extra query data merged into the callback (for example
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">from=my-app</code>).
+      </p>
+      <p>Example login link in HTML:</p>
+      <.code_block language="html" code={html_login_link_example()} />
+    </.doc_section>
+
+    <.doc_section id="callback" title="Callback">
+      <p>
+        After successful login or registration, AccountKit redirects the browser to your
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">redirect_url</code>
+        with these query parameters:
+      </p>
+      <ul class="list-disc space-y-2 pl-5">
+        <li><strong>auth_token</strong> — JWT for the signed-in end user</li>
+        <li><strong>expires_in</strong> — token lifetime in seconds (use for cookie max-age)</li>
+        <li>Any params you passed in <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">callback_params</code></li>
+      </ul>
+      <p>
+        AccountKit does <em>not</em> set a session cookie on your domain. Your app is responsible for
+        reading <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">auth_token</code>
+        from the URL and persisting it.
+      </p>
+      <p>Example callback URL:</p>
+      <.code_block code={
+        "https://app.example.com/auth/callback?auth_token=eyJhbG...&expires_in=1209600&from=my-app"
+      } />
+    </.doc_section>
+
+    <.doc_section id="session" title="Store session">
+      <p>
+        On your callback route, read <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">auth_token</code>
+        and store it securely (HTTP cookie or secure storage). Use
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">expires_in</code>
+        when setting cookie max-age.
+      </p>
+      <p>
+        Remove the token from the browser address bar after reading it (for example with
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">history.replaceState</code>)
+        so it is not kept in history or shared accidentally.
+      </p>
+      <.code_block language="javascript" code={callback_handler_example()} />
+    </.doc_section>
+
+    <.doc_section id="api-reference" title="Get current user">
+      <p>
+        Call this endpoint with the end-user JWT to load the signed-in profile:
+      </p>
+      <.code_block code={
+        "GET /api/rest/auth/me\nAuthorization: Bearer {auth_token}\nAccept: application/json"
+      } />
+      <p>Example response:</p>
+      <.code_block language="json" code={me_response_example()} />
+      <p>
+        See the full request and response schemas in
+        <a href={~p"/api/json/docs"} class="link link-primary">OpenAPI docs</a>.
+      </p>
+    </.doc_section>
+
+    <.doc_section id="logout" title="Logout">
+      <p>
+        Revoke the current token on AccountKit, then clear local storage:
+      </p>
+      <.code_block code={
+        "POST /api/rest/auth/logout\nAuthorization: Bearer {auth_token}"
+      } />
+      <p>
+        After a successful response, delete the cookie or local token in your app and redirect the
+        user to your signed-out page.
+      </p>
+    </.doc_section>
+
+    <.doc_section id="rest-alternative" title="REST alternative">
+      <p>
+        If you prefer not to use browser redirects, you can authenticate with JSON APIs directly.
+        Your app still needs the client token and redirect URL for validation:
+      </p>
+      <.code_block code={
+        "POST /api/rest/auth/login\nContent-Type: application/json\n\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"token\": \"{client_token}\",\n  \"redirectUrl\": \"https://app.example.com/auth/callback\"\n}"
+      } />
+      <p>
+        The response includes <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">token</code>,
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">expires_in</code>,
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">user</code>, and
+        <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">client</code>.
+        Use the token the same way as the redirect flow.
+      </p>
+    </.doc_section>
+
+    <.doc_section id="security" title="Security">
+      <ul class="list-disc space-y-2 pl-5">
+        <li>Use HTTPS in production for AccountKit and your callback URL</li>
+        <li>Register exact redirect URLs — AccountKit rejects unknown callbacks</li>
+        <li>Configure allowed origins for browser-based API calls</li>
+        <li>Strip <code class="rounded bg-base-200 px-1.5 py-0.5 text-sm">auth_token</code> from the URL immediately after reading it</li>
+        <li>Store tokens in HttpOnly cookies when possible; avoid logging tokens</li>
+        <li>Handle expired tokens gracefully — clear session and restart SSO login</li>
+      </ul>
+    </.doc_section>
+
+    <section class="rounded-2xl border border-base-300 bg-base-200/40 p-6">
+      <h2 class="text-lg font-semibold">End-to-end example</h2>
+      <p class="mt-2 text-sm leading-6 text-base-content/70">
+        Minimal client flow: login link, callback handler, profile fetch.
+      </p>
+      <.code_block language="javascript" code={end_to_end_example()} />
+    </section>
+  </div>
+</.docs_shell>

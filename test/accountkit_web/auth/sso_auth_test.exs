@@ -166,7 +166,7 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       assert expires_in > 0
     end
 
-    test "user endpoint accepts bearer tokens and rejects missing tokens", %{conn: conn} do
+    test "me endpoint accepts bearer tokens and rejects missing tokens", %{conn: conn} do
       %{token: token} = sso_application!()
 
       end_user!(
@@ -190,7 +190,7 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
         conn
         |> recycle()
         |> put_req_header("authorization", "Bearer #{auth_token}")
-        |> get("/api/rest/auth/user")
+        |> get("/api/rest/auth/me")
 
       assert %{
                "success" => true,
@@ -201,7 +201,7 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
         conn
         |> recycle()
         |> put_req_header("origin", "http://localhost:5174")
-        |> get("/api/rest/auth/user")
+        |> get("/api/rest/auth/me")
 
       assert %{"success" => false, "code" => "INVALID_TOKEN"} = json_response(missing_conn, 401)
 

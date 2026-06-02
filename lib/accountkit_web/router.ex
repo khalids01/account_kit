@@ -22,6 +22,12 @@ defmodule AccountkitWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :docs do
+    plug :accepts, ["html"]
+    plug :put_root_layout, html: {AccountkitWeb.Layouts, :docs_root}
+    plug :put_secure_browser_headers
+  end
+
   pipeline :api do
     plug AccountkitWeb.Plugs.Cors
     plug :accepts, ["json"]
@@ -49,6 +55,12 @@ defmodule AccountkitWeb.Router do
     post "/sso/login", Pages.ApplicationSsoController, :submit_login
     get "/sso/register", Pages.ApplicationSsoController, :register
     post "/sso/register", Pages.ApplicationSsoController, :submit_register
+  end
+
+  scope "/docs", AccountkitWeb do
+    pipe_through :docs
+
+    get "/sso", Pages.SsoDocsController, :index
   end
 
   scope "/", AccountkitWeb do
