@@ -116,6 +116,42 @@ defmodule AccountkitWeb.OpenApiController do
           }
         },
         options: preflight_operation()
+      },
+      "/rest/auth/me" => %{
+        get: %{
+          tags: ["Application SSO Auth"],
+          summary: "Get the current application end user",
+          operationId: "getCurrentApplicationEndUser",
+          security: [%{bearerAuth: []}],
+          responses: %{
+            "200" =>
+              json_response("Authenticated end-user profile", "#/components/schemas/UserResponse"),
+            "401" =>
+              json_response(
+                "Missing, invalid, or non-end-user token",
+                "#/components/schemas/ErrorResponse"
+              )
+          }
+        },
+        options: preflight_operation()
+      },
+      "/rest/auth/logout" => %{
+        post: %{
+          tags: ["Application SSO Auth"],
+          summary: "Logout the current application end user token",
+          operationId: "logoutApplicationEndUser",
+          security: [%{bearerAuth: []}],
+          responses: %{
+            "200" =>
+              json_response("Current token revoked", "#/components/schemas/SuccessResponse"),
+            "401" =>
+              json_response(
+                "Missing, invalid, or non-end-user token",
+                "#/components/schemas/ErrorResponse"
+              )
+          }
+        },
+        options: preflight_operation()
       }
     }
   end
@@ -266,7 +302,7 @@ defmodule AccountkitWeb.OpenApiController do
         json_response("Authentication succeeded", "#/components/schemas/AuthSuccessResponse"),
       "400" =>
         json_response(
-          "Invalid request or password auth disabled",
+          "Invalid request, invalid email address, or password auth disabled",
           "#/components/schemas/ErrorResponse"
         ),
       "401" =>

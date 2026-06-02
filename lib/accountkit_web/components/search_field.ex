@@ -115,7 +115,7 @@ defmodule AccountkitWeb.Components.SearchField do
 
   attr :rest, :global,
     include: ~w(autocomplete disabled form list maxlength minlength pattern placeholder
-        readonly required size spellcheck inputmode title autofocus),
+        readonly required size spellcheck inputmode title autofocus phx-debounce),
     doc:
       "Global attributes can define defaults which are merged with attributes provided by the caller"
 

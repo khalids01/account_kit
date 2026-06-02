@@ -6,8 +6,6 @@ defmodule AccountkitWeb.Features.ApplicationSso.Forms do
 
   alias Accountkit.Auth.Email
 
-  @email_format ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
   def login_form(params \\ %{}) do
     params
     |> login_changeset()
@@ -26,7 +24,7 @@ defmodule AccountkitWeb.Features.ApplicationSso.Forms do
     |> update_change(:email, &Email.normalize/1)
     |> validate_required([:email], message: "Enter your email address.")
     |> validate_required([:password], message: "Enter your password.")
-    |> validate_format(:email, @email_format, message: "Enter a valid email address.")
+    |> validate_email()
   end
 
   def register_changeset(params \\ %{}) do
@@ -37,12 +35,22 @@ defmodule AccountkitWeb.Features.ApplicationSso.Forms do
     |> validate_required([:name], message: "Enter your name.")
     |> validate_required([:email], message: "Enter your email address.")
     |> validate_required([:password], message: "Enter your password.")
-    |> validate_format(:email, @email_format, message: "Enter a valid email address.")
+    |> validate_email()
     |> validate_length(:password, min: 8, message: "Password must be at least 8 characters long.")
   end
 
   def first_error(%Ecto.Changeset{errors: [{_field, {message, _opts}} | _]}), do: message
   def first_error(_changeset), do: "Please fix the highlighted fields."
+
+  defp validate_email(changeset) do
+    validate_change(changeset, :email, fn :email, email ->
+      if Email.valid?(email) do
+        []
+      else
+        [email: {"Enter a valid email address.", []}]
+      end
+    end)
+  end
 
   defp trim(value) when is_binary(value), do: String.trim(value)
   defp trim(value), do: value

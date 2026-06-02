@@ -32,7 +32,6 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
           autocomplete="name"
           required
           phx-debounce="blur"
-          class="mt-2 w-full"
           placeholder="Khalid"
         />
 
@@ -43,7 +42,6 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
           autocomplete="email"
           required
           phx-debounce="blur"
-          class="mt-2 w-full"
           placeholder="you@example.com"
         />
 
@@ -53,7 +51,6 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
           label="Password"
           autocomplete="new-password"
           required
-          class="mt-2 w-full"
           placeholder="At least 8 characters"
         />
 

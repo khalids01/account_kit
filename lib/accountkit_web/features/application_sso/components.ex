@@ -12,9 +12,9 @@ defmodule AccountkitWeb.Features.ApplicationSso.Components do
 
   def auth_shell(assigns) do
     ~H"""
-    <Layouts.home flash={%{}} current_scope={nil}>
-      <section class="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center px-6 py-16">
-        <div class="w-full rounded-2xl border border-base-300 bg-base-100 p-8 shadow-sm">
+    <Layouts.app flash={%{}} current_scope={nil}>
+      <section class="mx-auto flex min-h-screen max-w-md items-center px-6 py-16">
+        <div class="sso-auth-form w-full rounded-2xl border border-base-300 bg-base-100 p-8 shadow-sm [&_label]:!text-base-content [&_input:not([type=hidden])]:!border-base-300 [&_input:not([type=hidden])]:!bg-base-200 [&_input:not([type=hidden])]:!text-base-content [&_input:not([type=hidden])::placeholder]:!text-base-content/50">
           <div class="mb-8 text-center">
             <img
               :if={@client && @client.logoUrl}
@@ -38,7 +38,7 @@ defmodule AccountkitWeb.Features.ApplicationSso.Components do
           {render_slot(@inner_block)}
         </div>
       </section>
-    </Layouts.home>
+    </Layouts.app>
     """
   end
 end

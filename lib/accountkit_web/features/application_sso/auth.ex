@@ -4,43 +4,48 @@ defmodule AccountkitWeb.Features.ApplicationSso.Auth do
   """
 
   alias Accountkit.Accounts.{EndUser, SsoApplication}
+  alias Accountkit.Auth.Email
 
   def sign_in(%SsoApplication{} = application, params) do
-    EndUser
-    |> Ash.Query.for_read(
-      :sign_in_with_password,
-      %{
-        sso_application_id: application.id,
-        login_id: EndUser.login_id(application.id, params["email"]),
-        password: params["password"]
-      },
-      authorize?: false
-    )
-    |> Ash.read_one()
-    |> case do
-      {:ok, %EndUser{} = end_user} -> {:ok, end_user}
-      {:ok, nil} -> {:error, :invalid_credentials}
-      {:error, _error} -> {:error, :invalid_credentials}
+    with {:ok, email} <- Email.validate(params["email"]) do
+      EndUser
+      |> Ash.Query.for_read(
+        :sign_in_with_password,
+        %{
+          sso_application_id: application.id,
+          login_id: EndUser.login_id(application.id, email),
+          password: params["password"]
+        },
+        authorize?: false
+      )
+      |> Ash.read_one()
+      |> case do
+        {:ok, %EndUser{} = end_user} -> {:ok, end_user}
+        {:ok, nil} -> {:error, :invalid_credentials}
+        {:error, _error} -> {:error, :invalid_credentials}
+      end
     end
   end
 
   def register(%SsoApplication{} = application, params) do
-    EndUser
-    |> Ash.Changeset.for_create(
-      :register_with_password,
-      %{
-        sso_application_id: application.id,
-        name: params["name"],
-        email: params["email"],
-        password: params["password"],
-        password_confirmation: params["password"]
-      },
-      authorize?: false
-    )
-    |> Ash.create()
-    |> case do
-      {:ok, %EndUser{} = end_user} -> {:ok, end_user}
-      {:error, error} -> {:error, classify_register_error(error)}
+    with {:ok, email} <- Email.validate(params["email"]) do
+      EndUser
+      |> Ash.Changeset.for_create(
+        :register_with_password,
+        %{
+          sso_application_id: application.id,
+          name: params["name"],
+          email: email,
+          password: params["password"],
+          password_confirmation: params["password"]
+        },
+        authorize?: false
+      )
+      |> Ash.create()
+      |> case do
+        {:ok, %EndUser{} = end_user} -> {:ok, end_user}
+        {:error, error} -> {:error, classify_register_error(error)}
+      end
     end
   end
 

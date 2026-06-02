@@ -25,6 +25,7 @@ defmodule AccountkitWeb.Features.EndUsers.Components do
           size="small"
           space="small"
           variant="base"
+          phx-debounce="600"
         >
           <:start_section>
             <.icon name="hero-magnifying-glass" class="size-4 opacity-60" />

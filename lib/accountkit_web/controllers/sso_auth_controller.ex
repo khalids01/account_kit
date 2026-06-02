@@ -1,7 +1,10 @@
 defmodule AccountkitWeb.SsoAuthController do
   use AccountkitWeb, :controller
 
-  alias Accountkit.Accounts.EndUser
+  import Ecto.Query
+
+  alias Accountkit.Accounts.{EndUser, EndUserToken}
+  alias Accountkit.Repo
   alias AccountkitWeb.Features.ApplicationSso.{Auth, Clients}
 
   def options(conn, _params) do
@@ -70,6 +73,20 @@ defmodule AccountkitWeb.SsoAuthController do
     end
   end
 
+  def me(conn, params), do: user(conn, params)
+
+  def logout(conn, _params) do
+    with %EndUser{} <- conn.assigns[:current_end_user],
+         %EndUserToken{jti: jti} <- conn.assigns[:current_end_user_token_record],
+         {count, _} when count > 0 <- delete_token(jti) do
+      conn
+      |> put_cors_headers()
+      |> json(%{success: true})
+    else
+      _error -> legacy_error(conn, :invalid_token)
+    end
+  end
+
   defp validate_password_client(params) do
     with {:ok, application} <- Clients.validate_client(params["token"], params["redirectUrl"]) do
       if application.password_enabled do
@@ -89,6 +106,13 @@ defmodule AccountkitWeb.SsoAuthController do
       user: Auth.user_json(end_user),
       client: Auth.client_json(application)
     })
+  end
+
+  defp delete_token(jti) do
+    Repo.delete_all(
+      from token in "end_user_tokens",
+        where: token.jti == ^jti
+    )
   end
 
   defp require_param(params, key, reason) do
@@ -117,6 +141,10 @@ defmodule AccountkitWeb.SsoAuthController do
 
   defp legacy_error(conn, :password_too_short, _opts) do
     json_error(conn, 400, "Password must be at least 8 characters long", "PASSWORD_TOO_SHORT")
+  end
+
+  defp legacy_error(conn, :invalid_email, _opts) do
+    json_error(conn, 400, "Enter a valid email address.", "INVALID_EMAIL")
   end
 
   defp legacy_error(conn, reason, opts) do

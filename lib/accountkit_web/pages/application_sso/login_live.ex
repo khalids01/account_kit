@@ -32,7 +32,6 @@ defmodule AccountkitWeb.Pages.ApplicationSso.LoginLive do
           autocomplete="email"
           required
           phx-debounce="blur"
-          class="mt-2 w-full !px-2 !h-10"
           placeholder="you@example.com"
         />
 
@@ -42,7 +41,6 @@ defmodule AccountkitWeb.Pages.ApplicationSso.LoginLive do
           label="Password"
           autocomplete="current-password"
           required
-          class="mt-2 w-full !px-2 !h-10"
           placeholder="Your password"
         />
 

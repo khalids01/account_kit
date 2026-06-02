@@ -78,9 +78,13 @@ defmodule AccountkitWeb.Router do
     options "/rest/auth/login", SsoAuthController, :options
     options "/rest/auth/register", SsoAuthController, :options
     options "/rest/auth/user", SsoAuthController, :options
+    options "/rest/auth/me", SsoAuthController, :options
+    options "/rest/auth/logout", SsoAuthController, :options
     post "/rest/auth/login", SsoAuthController, :login
     post "/rest/auth/register", SsoAuthController, :register
     get "/rest/auth/user", SsoAuthController, :user
+    get "/rest/auth/me", SsoAuthController, :me
+    post "/rest/auth/logout", SsoAuthController, :logout
   end
 
   scope "/", AccountkitWeb do
