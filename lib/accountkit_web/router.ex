@@ -35,6 +35,13 @@ defmodule AccountkitWeb.Router do
     plug :set_actor, :user
   end
 
+  pipeline :sso_rest do
+    plug AccountkitWeb.Plugs.Cors
+    plug :accepts, ["json"]
+    plug :load_from_bearer
+    plug :set_actor, :end_user
+  end
+
   scope "/", AccountkitWeb do
     pipe_through :sso_browser
 
@@ -87,6 +94,10 @@ defmodule AccountkitWeb.Router do
     options "/auth/validate-client", SsoAuthController, :options
     post "/auth/validate-client", SsoAuthController, :validate_client
     get "/auth/client-info", SsoAuthController, :client_info
+  end
+
+  scope "/api", AccountkitWeb do
+    pipe_through [:sso_rest]
 
     options "/rest/auth/login", SsoAuthController, :options
     options "/rest/auth/register", SsoAuthController, :options
