@@ -16,6 +16,12 @@ defmodule AccountkitWeb.Router do
     plug AccountkitWeb.Plugs.RemoteIp
   end
 
+  pipeline :sso_browser do
+    plug :accepts, ["html"]
+    plug :put_root_layout, html: {AccountkitWeb.Layouts, :sso_root}
+    plug :put_secure_browser_headers
+  end
+
   pipeline :api do
     plug AccountkitWeb.Plugs.Cors
     plug :accepts, ["json"]
@@ -30,10 +36,16 @@ defmodule AccountkitWeb.Router do
   end
 
   scope "/", AccountkitWeb do
-    pipe_through :browser
+    pipe_through :sso_browser
 
-    live "/sso/login", Pages.ApplicationSso.LoginLive, :new
-    live "/sso/register", Pages.ApplicationSso.RegisterLive, :new
+    get "/sso/login", Pages.ApplicationSsoController, :login
+    post "/sso/login", Pages.ApplicationSsoController, :submit_login
+    get "/sso/register", Pages.ApplicationSsoController, :register
+    post "/sso/register", Pages.ApplicationSsoController, :submit_register
+  end
+
+  scope "/", AccountkitWeb do
+    pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes,
       on_mount: [

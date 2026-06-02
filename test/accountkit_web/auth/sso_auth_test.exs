@@ -211,7 +211,7 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
     end
   end
 
-  describe "SSO LiveViews" do
+  describe "SSO pages" do
     test "normal login still shows magic-link login", %{conn: conn} do
       {:ok, _view, html} = live(conn, "/login")
 
@@ -219,21 +219,117 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       assert html =~ "Sign in to AccountKit"
     end
 
-    test "SSO login and register render password forms with client branding", %{conn: conn} do
+    test "SSO login and register render password forms without session cookies", %{conn: conn} do
       %{token: token} = sso_application!()
       query = URI.encode_query(%{token: token, redirect_url: "http://localhost:5173/callback"})
 
-      {:ok, _view, login_html} = live(conn, "/sso/login?#{query}")
+      login_conn = get(conn, "/sso/login?#{query}")
+      login_html = html_response(login_conn, 200)
 
       assert login_html =~ "Test App"
       assert login_html =~ "Sign in to your account"
       assert login_html =~ "type=\"password\""
+      refute sets_cookie?(login_conn, "_accountkit_key")
+      assert get_resp_header(login_conn, "set-cookie") == []
 
-      {:ok, _view, register_html} = live(conn, "/sso/register?#{query}")
+      register_conn =
+        conn
+        |> recycle()
+        |> get("/sso/register?#{query}")
+
+      register_html = html_response(register_conn, 200)
 
       assert register_html =~ "Test App"
       assert register_html =~ "Create account"
       assert register_html =~ "type=\"password\""
+      refute sets_cookie?(register_conn, "_accountkit_key")
+      assert get_resp_header(register_conn, "set-cookie") == []
+    end
+
+    test "SSO login redirects with auth token without setting session cookie", %{conn: conn} do
+      %{token: token, application: application} = sso_application!()
+      end_user!("sso-login@example.com", "SSO Login", "password123", application)
+
+      conn =
+        post(conn, "/sso/login", %{
+          "sso_login" => %{
+            "email" => "sso-login@example.com",
+            "password" => "password123",
+            "token" => token,
+            "redirect_url" => "http://localhost:5173/callback",
+            "callback_params" => "from=test-app"
+          }
+        })
+
+      redirect_url = redirected_to(conn, 302)
+      query = URI.parse(redirect_url).query |> URI.decode_query()
+
+      assert redirect_url =~ "http://localhost:5173/callback"
+      assert query["from"] == "test-app"
+      assert is_binary(query["auth_token"])
+      assert String.to_integer(query["expires_in"]) > 0
+      refute sets_cookie?(conn, "_accountkit_key")
+      assert get_resp_header(conn, "set-cookie") == []
+    end
+
+    test "SSO register redirects with auth token without setting session cookie", %{conn: conn} do
+      %{token: token} = sso_application!()
+
+      conn =
+        post(conn, "/sso/register", %{
+          "sso_register" => %{
+            "name" => "SSO Register",
+            "email" => "sso-register@example.com",
+            "password" => "password123",
+            "token" => token,
+            "redirect_url" => "http://localhost:5173/callback"
+          }
+        })
+
+      redirect_url = redirected_to(conn, 302)
+      query = URI.parse(redirect_url).query |> URI.decode_query()
+
+      assert redirect_url =~ "http://localhost:5173/callback"
+      assert is_binary(query["auth_token"])
+      assert String.to_integer(query["expires_in"]) > 0
+      refute sets_cookie?(conn, "_accountkit_key")
+      assert get_resp_header(conn, "set-cookie") == []
+    end
+
+    test "SSO errors render without setting session cookies", %{conn: conn} do
+      %{token: token, application: application} = sso_application!()
+      end_user!("bad-login@example.com", "Bad Login", "password123", application)
+
+      login_conn =
+        post(conn, "/sso/login", %{
+          "sso_login" => %{
+            "email" => "bad-login@example.com",
+            "password" => "wrong-password",
+            "token" => token,
+            "redirect_url" => "http://localhost:5173/callback"
+          }
+        })
+
+      assert html_response(login_conn, 200) =~ "Invalid email or password"
+      refute sets_cookie?(login_conn, "_accountkit_key")
+      assert get_resp_header(login_conn, "set-cookie") == []
+
+      register_conn =
+        conn
+        |> recycle()
+        |> post("/sso/register", %{
+          "sso_register" => %{
+            "name" => "Bad Register",
+            "email" => "bad-register@example.com",
+            "password" => "short",
+            "token" => token,
+            "redirect_url" => "http://localhost:5173/callback"
+          }
+        })
+
+      assert html_response(register_conn, 200) =~ "Password must be at least 8 characters long."
+      refute sets_cookie?(register_conn, "_accountkit_key")
+      assert get_resp_header(register_conn, "set-cookie") == []
     end
   end
 
@@ -285,5 +381,11 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       authorize?: false
     )
     |> Ash.read_one!()
+  end
+
+  defp sets_cookie?(conn, cookie_name) do
+    conn
+    |> get_resp_header("set-cookie")
+    |> Enum.any?(&String.starts_with?(&1, "#{cookie_name}="))
   end
 end

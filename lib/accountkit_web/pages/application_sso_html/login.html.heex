@@ -1,0 +1,53 @@
+<section class="mx-auto flex min-h-screen max-w-md items-center px-6 py-16">
+  <div class="sso-auth-form w-full rounded-2xl border border-base-300 bg-base-100 p-8 shadow-sm">
+    <div class="mb-8 text-center">
+      <img
+        :if={@client && @client.logoUrl}
+        src={@client.logoUrl}
+        alt={@client.name <> " logo"}
+        class="mx-auto mb-4 max-h-16 max-w-36 object-contain"
+      />
+      <p :if={@client} class="text-sm font-medium text-base-content/60">
+        {@client.name}
+      </p>
+      <h1 class="mt-3 text-2xl font-bold tracking-tight">Sign in to your account</h1>
+    </div>
+
+    <.sso_alert :if={@client_error} message={@client_error} />
+    <.sso_alert :if={@error} message={@error} />
+
+    <form :if={@form_enabled} method="post" action={@action_path} class="space-y-5">
+      <.hidden_context prefix="sso_login" assigns={assigns} />
+
+      <.sso_input
+        name="sso_login[email]"
+        id="sso_login_email"
+        type="email"
+        label="Email"
+        autocomplete="email"
+        placeholder="you@example.com"
+        value={field_value(@form, :email)}
+        errors={field_errors(@form, :email)}
+        required
+      />
+
+      <.sso_input
+        name="sso_login[password]"
+        id="sso_login_password"
+        type="password"
+        label="Password"
+        autocomplete="current-password"
+        placeholder="Your password"
+        errors={field_errors(@form, :password)}
+        required
+      />
+
+      <button type="submit" class="btn btn-primary w-full">Sign in</button>
+    </form>
+
+    <p :if={@form_enabled} class="mt-6 text-center text-sm text-base-content/70">
+      Don't have an account?
+      <a href={@switch_path} class="font-medium text-primary hover:underline">Sign up</a>
+    </p>
+  </div>
+</section>
