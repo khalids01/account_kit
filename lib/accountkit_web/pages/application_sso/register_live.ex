@@ -17,9 +17,9 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <.auth_shell client={@client} title="Create account" error={@error}>
+    <.auth_shell client={@client} title="Create account" flash={@flash}>
       <.form
-        :if={is_nil(@error)}
+        :if={@form_enabled}
         for={@form}
         phx-submit="submit"
         phx-change="validate"
@@ -57,7 +57,7 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
         <button type="submit" class="btn btn-primary w-full">Create account</button>
       </.form>
 
-      <p :if={is_nil(@error)} class="mt-6 text-center text-sm text-base-content/70">
+      <p :if={@form_enabled} class="mt-6 text-center text-sm text-base-content/70">
         Already have an account?
         <.link navigate={@login_path} class="font-medium text-primary hover:underline">
           Sign in
@@ -80,24 +80,31 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
 
     cond do
       not changeset.valid? ->
-        {:noreply,
-         socket
-         |> assign(:form, to_form(%{changeset | action: :validate}, as: :sso_register))
-         |> assign(:error, Forms.first_error(changeset))}
+        {:noreply, assign(socket, :form, to_form(%{changeset | action: :validate}, as: :sso_register))}
 
       true ->
         case Auth.register(socket.assigns.application, params) do
           {:ok, end_user} ->
             {:noreply, redirect_to_client(socket, end_user)}
 
+          {:error, :email_exists} ->
+            form =
+              params
+              |> Forms.register_changeset()
+              |> Ecto.Changeset.add_error(:email, Clients.error_message(:email_exists))
+              |> Map.put(:action, :validate)
+              |> to_form(as: :sso_register)
+
+            {:noreply, assign(socket, :form, form)}
+
           {:error, reason} ->
-            {:noreply, assign(socket, :error, Clients.error_message(reason))}
+            {:noreply, put_flash(socket, :error, Clients.error_message(reason))}
         end
     end
   end
 
   def handle_event("submit", _params, socket) do
-    {:noreply, assign(socket, :error, "Something went wrong. Please try again.")}
+    {:noreply, put_flash(socket, :error, "Something went wrong. Please try again.")}
   end
 
   defp assign_client(socket, %{"token" => token, "redirect_url" => redirect_url} = params)
@@ -114,27 +121,38 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
 
     case Clients.validate_client(token, redirect_url) do
       {:ok, application} ->
-        assign(socket,
-          application: application,
-          client: Clients.public_client(application),
-          error: password_error(application)
-        )
+        socket =
+          assign(socket,
+            application: application,
+            client: Clients.public_client(application),
+            form_enabled: application.password_enabled
+          )
+
+        if application.password_enabled do
+          socket
+        else
+          put_flash(socket, :error, Clients.error_message(:password_disabled))
+        end
 
       {:error, reason} ->
-        assign(socket, application: nil, client: nil, error: Clients.error_message(reason))
+        socket
+        |> assign(application: nil, client: nil, form_enabled: false)
+        |> put_flash(:error, Clients.error_message(reason))
     end
   end
 
   defp assign_client(socket, _params) do
-    assign(socket,
+    socket
+    |> assign(
       token: nil,
       redirect_url: nil,
       callback_params: nil,
       login_path: nil,
       application: nil,
       client: nil,
-      error: "Missing required parameters"
+      form_enabled: false
     )
+    |> put_flash(:error, "Missing required parameters")
   end
 
   defp redirect_to_client(socket, end_user) do
@@ -147,9 +165,6 @@ defmodule AccountkitWeb.Pages.ApplicationSso.RegisterLive do
         )
     )
   end
-
-  defp password_error(%{password_enabled: true}), do: nil
-  defp password_error(_application), do: Clients.error_message(:password_disabled)
 
   defp sso_path(path, token, redirect_url, callback_params) do
     params =
