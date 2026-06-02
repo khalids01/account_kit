@@ -229,6 +229,8 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       assert login_html =~ "Test App"
       assert login_html =~ "Sign in to your account"
       assert login_html =~ "type=\"password\""
+      refute login_html =~ "Enter your email address."
+      refute login_html =~ "Enter your password."
       refute sets_cookie?(login_conn, "_accountkit_key")
       assert get_resp_header(login_conn, "set-cookie") == []
 
@@ -242,6 +244,9 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       assert register_html =~ "Test App"
       assert register_html =~ "Create account"
       assert register_html =~ "type=\"password\""
+      refute register_html =~ "Enter your name."
+      refute register_html =~ "Enter your email address."
+      refute register_html =~ "Enter your password."
       refute sets_cookie?(register_conn, "_accountkit_key")
       assert get_resp_header(register_conn, "set-cookie") == []
     end
@@ -310,7 +315,10 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
           }
         })
 
-      assert html_response(login_conn, 200) =~ "Invalid email or password"
+      login_html = html_response(login_conn, 200)
+
+      assert login_html =~ "Invalid email or password"
+      assert login_html =~ "id=\"sso-toast\""
       refute sets_cookie?(login_conn, "_accountkit_key")
       assert get_resp_header(login_conn, "set-cookie") == []
 
@@ -327,7 +335,11 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
           }
         })
 
-      assert html_response(register_conn, 200) =~ "Password must be at least 8 characters long."
+      register_html = html_response(register_conn, 200)
+
+      assert register_html =~ "Password must be at least 8 characters long."
+      assert register_html =~ "data-error-for=\"sso_register_password\""
+      refute register_html =~ "id=\"sso-toast\""
       refute sets_cookie?(register_conn, "_accountkit_key")
       assert get_resp_header(register_conn, "set-cookie") == []
     end

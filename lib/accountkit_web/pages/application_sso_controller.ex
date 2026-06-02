@@ -16,10 +16,7 @@ defmodule AccountkitWeb.Pages.ApplicationSsoController do
 
     cond do
       not changeset.valid? ->
-        render_page(conn, :login, params,
-          form: Forms.login_form(params),
-          error: Forms.first_error(changeset)
-        )
+        render_page(conn, :login, params, form: Forms.login_form_with_action(params))
 
       true ->
         with {:ok, application} <- validate_password_client(params),
@@ -44,16 +41,22 @@ defmodule AccountkitWeb.Pages.ApplicationSsoController do
 
     cond do
       not changeset.valid? ->
-        render_page(conn, :register, params,
-          form: Forms.register_form(params),
-          error: Forms.first_error(changeset)
-        )
+        render_page(conn, :register, params, form: Forms.register_form_with_action(params))
 
       true ->
         with {:ok, application} <- validate_password_client(params),
              {:ok, end_user} <- Auth.register(application, params) do
           redirect_to_client(conn, params, end_user)
         else
+          {:error, :email_exists} ->
+            render_page(conn, :register, params,
+              form:
+                Forms.register_form_with_email_error(
+                  params,
+                  Clients.error_message(:email_exists)
+                )
+            )
+
           {:error, reason} ->
             render_page(conn, :register, params,
               form: Forms.register_form(params),

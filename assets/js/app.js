@@ -17,6 +17,7 @@
 // To load it, simply add a second `<link>` to your `root.html.heex` file.
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html";
+import "./sso_form.js";
 // Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";

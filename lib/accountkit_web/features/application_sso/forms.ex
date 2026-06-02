@@ -12,9 +12,31 @@ defmodule AccountkitWeb.Features.ApplicationSso.Forms do
     |> to_form(as: :sso_login)
   end
 
+  def login_form_with_action(params) do
+    params
+    |> login_changeset()
+    |> Map.put(:action, :validate)
+    |> to_form(as: :sso_login)
+  end
+
   def register_form(params \\ %{}) do
     params
     |> register_changeset()
+    |> to_form(as: :sso_register)
+  end
+
+  def register_form_with_action(params) do
+    params
+    |> register_changeset()
+    |> Map.put(:action, :validate)
+    |> to_form(as: :sso_register)
+  end
+
+  def register_form_with_email_error(params, message) do
+    params
+    |> register_changeset()
+    |> add_error(:email, message)
+    |> Map.put(:action, :validate)
     |> to_form(as: :sso_register)
   end
 
