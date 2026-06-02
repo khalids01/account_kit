@@ -200,9 +200,14 @@ defmodule AccountkitWeb.Auth.SsoAuthTest do
       missing_conn =
         conn
         |> recycle()
+        |> put_req_header("origin", "http://localhost:5174")
         |> get("/api/rest/auth/user")
 
       assert %{"success" => false, "code" => "INVALID_TOKEN"} = json_response(missing_conn, 401)
+
+      assert get_resp_header(missing_conn, "access-control-allow-origin") == [
+               "http://localhost:5174"
+             ]
     end
   end
 

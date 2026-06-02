@@ -17,6 +17,7 @@ defmodule AccountkitWeb.Router do
   end
 
   pipeline :api do
+    plug AccountkitWeb.Plugs.Cors
     plug :accepts, ["json"]
 
     plug AshAuthentication.Strategy.ApiKey.Plug,
